@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copie-Examen : affichage et chronomètre d'examen</title>
+<meta name="description" content="Affichage vidéoprojecteur pour examens : horloge, épreuves dynamiques, consignes et modèle de copie.">
+<style>
+:root{
+  --blue-france:#000091;--blue-cumulus:#e8edff;--red-marianne:#e1000f;
+  --grey-850:#3a3a3a;--grey-200:#eee;--grey-50:#f6f6f6;--white:#fff;
+  --warning:#b34000;--warning-bg:#fff3e0;--danger:#ce0500;--danger-bg:#ffe8e6;
+  --green-emerald:#008941;--bg:var(--grey-50);--surface:var(--white);--text:var(--grey-850);
+  --title:#161616;--border:#161616;--accent:var(--blue-france);
+  --field-color:#0055cc;--field-border:#0055cc;--font:'Marianne','Segoe UI',Arial,sans-serif;color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#161616;--surface:#1e1e1e;--text:#e0e0e0;--title:#fff;--border:#444;
+  --accent:#8585ff;--blue-france:#8585ff;--blue-cumulus:#1e1e3a;
+  --green-emerald:#4cca7e;--warning:#ffaa44;--warning-bg:#2a1a00;--danger:#ff5555;
+  --danger-bg:#2a0a0a;--grey-200:#2c2c2c;--field-color:#7aacff;--field-border:#7aacff;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100vh;background:var(--bg);color:var(--text);font-family:var(--font)}
+.main-screen{display:flex;flex-direction:column;min-height:100vh;height:100vh;overflow-y:auto;padding:6px 28px 4px}
+header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
+.header-top{display:flex;align-items:center;justify-content:center;gap:20px}
+.clock-block{text-align:left;flex-shrink:0;border-right:2px solid var(--border);padding-right:28px;margin-right:4px;width:188px}
+#current-date{font-size:.72rem;text-transform:uppercase;font-weight:700;color:var(--accent);letter-spacing:.06em;white-space:nowrap;min-width:6.5ch}
+#current-time{font-size:2.8rem;font-weight:800;color:var(--title);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:6.5ch;display:inline-block;padding-right:16px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.alert-warning{background:var(--warning-bg)!important}.alert-danger{background:var(--danger-bg)!important}
+.pictos-bar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;flex:1}
+.picto{display:none;flex-direction:column;align-items:center;text-align:center;background:#fff0f0;border:2px solid #ff4b4b;border-radius:6px;padding:6px 10px;width:100px;height:74px;justify-content:center;flex-shrink:0;cursor:pointer}
+.picto.active{display:flex}.picto:hover{opacity:.85}
+.picto svg{width:32px;height:32px;fill:none;stroke:#cc0000;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:4px;flex-shrink:0}
+.picto-label{font-size:.58rem;font-weight:800;text-transform:uppercase;color:#cc0000;line-height:1.2;letter-spacing:.03em;height:2.4em;display:flex;align-items:center;justify-content:center}
+:root[data-theme="dark"] .picto{background:#2a1515;border-color:#cc4444}:root[data-theme="dark"] .picto svg{stroke:#ff8888}:root[data-theme="dark"] .picto-label{color:#ff8888}
+.hb-spacer{flex:1;min-height:4px}.exam-blocs{display:flex;flex-direction:column;gap:0;flex:0 0 auto}.hb-row{display:flex;flex-direction:column;flex:0 0 auto}.hb-row .hb-spacer{flex:0 0 12px;min-height:12px}
+.horaire-bloc{display:flex;flex-direction:row;align-items:center;border:2px solid var(--border);border-radius:4px;overflow:hidden;background:var(--surface);width:100%;box-sizing:border-box}
+.horaire-bloc.dynamic-exam .hb-title{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:normal;flex-shrink:0;width:150px;min-width:120px;line-height:1.25;padding-right:4px;text-align:left;color:var(--exam-color,var(--accent))}
+.hb-body{flex:1;display:flex;flex-direction:column;padding:3px 8px;min-width:0}.hb-timing-row{display:flex;align-items:center;gap:5px}
+.time-field-wrap{display:flex;align-items:center;gap:4px;background:var(--surface);border:2px solid var(--border);border-radius:4px;padding:2px 6px;transition:border-color .2s;position:relative;flex-shrink:1;min-width:0}.time-field-wrap:focus-within{border-color:var(--accent);outline:2px solid #0000911a}.time-field-wrap.readonly{opacity:.65;background:var(--grey-200)}
+.time-label-chip{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);white-space:nowrap}.time-field-wrap input[type="time"]{background:transparent;border:none;color:var(--title);font-family:var(--font);font-size:1.55rem;font-weight:800;outline:none;width:6ch;text-align:center}.time-icon{width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;flex-shrink:0;pointer-events:none;opacity:.75}
+.hb-progress{width:100%;height:5px;background:var(--grey-200);border-radius:2px;overflow:hidden;margin-top:3px}.hb-bar{height:100%;width:100%;border-radius:2px;transition:width 1s linear,background .5s;background:var(--exam-color,var(--accent))}
+.hb-remaining{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 6px;border-left:2px solid var(--border);min-width:60px;text-align:center}.hb-rem-label{font-size:.48rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text);opacity:.65;white-space:nowrap}.hb-rem-value{font-size:1.9rem;font-weight:800;line-height:1;white-space:nowrap;color:var(--exam-color,var(--accent))}
+.hb-warn .hb-bar{background:var(--warning)!important}.hb-warn .hb-rem-value{color:var(--warning)!important}.hb-danger .hb-bar{background:var(--danger)!important}.hb-danger .hb-rem-value{color:var(--danger)!important;animation:pulse 1.2s ease-in-out infinite}.hb-done .hb-rem-value{color:var(--green-emerald)!important}.hb-done .hb-bar{width:0!important}.hb-ended-flash{animation:pulse 1.2s ease-in-out 3}
+.copie-cadre{display:flex;flex-direction:row;border:2px solid var(--border);border-radius:2px;background:var(--surface);flex-shrink:0}.copie-haut{flex:0 0 auto;margin-bottom:3px}.copie-bas{margin-bottom:50px}.cadre-label-vert{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-size:.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--title);padding:4px 3px;border-right:2px solid var(--border);display:flex;align-items:center;justify-content:center;white-space:nowrap;background:var(--bg);flex-shrink:0;min-width:18px}.cadre-content{flex:1;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-start;gap:0;min-height:0}.cadre-content .line{min-height:32px;align-items:center}.cadre-note{flex-shrink:0;width:120px;border-left:2px solid var(--border);padding:5px 7px;font-size:.58rem;font-style:italic;color:var(--text);line-height:1.4;display:flex;align-items:flex-start}.copie-header-tag{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--title);margin-bottom:2px;border-bottom:1px solid var(--blue-cumulus);padding-bottom:2px}.line{display:flex;align-items:flex-end;gap:10px;width:100%}.line-half{flex:0 0 50%;display:flex;align-items:flex-end;gap:8px}.label{font-weight:700;font-size:.78rem;white-space:nowrap;color:var(--title);text-transform:uppercase;letter-spacing:.03em}.field{flex:1;border:none;border-bottom:2px solid var(--field-border);background:transparent;color:var(--field-color);font-family:var(--font);font-size:1.3rem;font-weight:800;outline:none;padding:0 3px 1px;text-transform:uppercase;transition:border-color .2s;min-width:0}.field:focus{border-bottom-color:var(--red-marianne)}select.field{height:34px;font-size:1.3rem;cursor:pointer}.field[readonly]{color:var(--field-color);opacity:1}.cadre{border:2px solid var(--field-border)!important;border-bottom:2px solid var(--field-border)!important}.sublabel{font-size:.55rem;font-style:italic;font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;white-space:nowrap}
+.ccyc-wrapper{display:none;flex-direction:column;flex-shrink:0;margin-bottom:50px;border:2px solid var(--border);background:var(--surface);font-family:var(--font)}.ccyc-wrapper.active{display:flex}.ccyc-title{font-size:.8rem;font-weight:800;text-transform:uppercase;padding:6px 10px;border-bottom:2px solid var(--border);color:var(--title)}.ccyc-info{border-bottom:2px solid var(--border);padding:4px 12px;display:flex;flex-direction:column;gap:3px}.ccyc-info-line{display:flex;align-items:flex-end;gap:8px}.ccyc-info-label{font-size:.88rem;font-weight:800;color:var(--title);white-space:nowrap;flex-shrink:0}.ccyc-info-field{flex:1;border:none;border-bottom:1.5px dotted var(--field-border);background:transparent;color:var(--field-color);font-family:var(--font);font-size:1.1rem;font-weight:800;outline:none;padding:0 3px 1px;text-transform:uppercase;min-width:0}.ccyc-consignes{display:flex;min-height:56px}.ccyc-consignes-left{flex:1;padding:5px 10px;border-right:2px solid var(--border);display:flex;gap:8px}.ccyc-consignes-title{font-size:.58rem;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--title);flex-shrink:0;padding-top:1px}.ccyc-consignes-list{font-size:.51rem;font-style:italic;color:var(--text);line-height:1.65;list-style:none;padding:0;margin:0}.ccyc-consignes-list li::before{content:"• "}.ccyc-consignes-right{flex-shrink:0;width:200px;padding:6px 12px;display:flex;flex-direction:column;justify-content:center}
+.admin-tools{position:fixed;bottom:12px;right:20px;display:flex;gap:6px;z-index:100}.zoom-tools{position:fixed;bottom:12px;left:20px;display:flex;gap:4px;z-index:100;align-items:center}.zoom-tools .btn{font-size:1rem;font-weight:900;padding:4px 11px;min-width:32px;text-align:center}.zoom-label{font-size:.65rem;font-weight:700;color:var(--accent);letter-spacing:.04em;opacity:.8;min-width:36px;text-align:center}.btn{background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:7px 11px;cursor:pointer;border-radius:4px;font-family:var(--font);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:background .15s,color .15s}.btn:hover{background:var(--accent);color:var(--bg)}.btn-small{padding:6px 10px;font-size:.68rem}
+.modal{display:none;position:fixed;z-index:200;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);align-items:center;justify-content:center}.modal.open{display:flex}.modal-content{background:var(--surface);padding:24px 28px;border-left:6px solid var(--accent);width:min(720px,92vw);max-height:90vh;overflow-y:auto;border-radius:4px;position:relative}.modal-content h2{margin:0 0 16px;font-size:1.2rem;color:var(--title);text-transform:uppercase;letter-spacing:.06em}.close-btn{position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text);line-height:1}.settings-section{margin-bottom:18px}.settings-section-title{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);border-bottom:1px solid var(--blue-cumulus);padding-bottom:5px;margin-bottom:10px}.picto-opt{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-weight:600;font-size:.9rem}.picto-opt input[type="checkbox"],.picto-opt input[type="radio"]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}.exam-settings-row{display:grid;grid-template-columns:26px minmax(150px,1fr) 92px 92px 34px;gap:8px;align-items:center;margin-bottom:8px}.exam-settings-row input[type="text"],.exam-settings-row input[type="time"]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-family:var(--font);font-size:.82rem;font-weight:700;outline:none}.exam-settings-row input:focus{border-color:var(--accent)}.exam-delete-btn{border:1px solid var(--danger);background:transparent;color:var(--danger);border-radius:4px;cursor:pointer;font-weight:900;height:30px;line-height:1}.exam-delete-btn:hover{background:var(--danger);color:#fff}.exam-settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.settings-help{font-size:.72rem;line-height:1.45;opacity:.72;margin:8px 0 0}
+#alert-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;padding:6px 16px;font-weight:800;font-size:.8rem;text-align:center;text-transform:uppercase;letter-spacing:.07em}.alert-warning #alert-banner{display:block;background:var(--warning);color:#fff}.alert-danger #alert-banner{display:block;background:var(--danger);color:#fff;animation:pulse 1.2s ease-in-out infinite}
+#share-toast{position:fixed;bottom:56px;right:20px;background:var(--green-emerald);color:#fff;font-size:.8rem;font-weight:700;padding:8px 18px;border-radius:4px;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}#share-toast.show{opacity:1;transform:translateY(0)}.share-url-box{display:flex;gap:8px;margin:12px 0 6px}.share-url-box input{flex:1;font-size:.78rem;padding:8px 10px;border:2px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none}.btn-copy{background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}.share-hint{font-size:.78rem;color:var(--text);opacity:.7;margin:0 0 18px;line-height:1.5}.share-fields-list{font-size:.8rem;line-height:1.8;background:var(--bg);border-radius:4px;padding:10px 14px;border:1px solid var(--border);margin-bottom:4px}.share-field-row{display:flex;gap:8px;align-items:baseline}.share-field-key{font-weight:700;color:var(--accent);min-width:160px}.share-field-val{color:var(--text);opacity:.85;font-style:italic}
+@media(max-width:800px){.time-label-chip,.time-icon{display:none}.time-field-wrap input[type="time"]{font-size:1.2rem;width:5.5ch}.horaire-bloc.dynamic-exam .hb-title{font-size:.72rem;width:110px;min-width:90px}.hb-rem-value{font-size:1.4rem}.exam-settings-row{grid-template-columns:26px 1fr 80px 80px 34px}}
+</style>
+</head>
+<body>
+<div class="main-screen" id="app">
+<header>
+  <div class="header-top">
+    <div class="clock-block">
+      <div id="current-date">-- -- ----</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="current-time">00:00:00</div>
+        <button id="time-alert-btn" onclick="openSettings('source')" title="Écart détecté avec l'heure internet" style="display:none;background:var(--warning);color:#fff;border:none;border-radius:4px;padding:3px 8px;font-family:var(--font);font-size:.75rem;font-weight:800;cursor:pointer;animation:pulse 1.2s ease-in-out infinite;white-space:nowrap;">⚠️ Heure ?</button>
+      </div>
+    </div>
+    <div class="pictos-bar">
+      <div class="picto active" id="p-tel" onclick="openSettings()" title="Modifier les paramètres"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="9" y1="5.5" x2="15" y2="5.5"/><circle cx="12" cy="18.5" r="1" fill="#cc0000"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label">Smartphone</span></div>
+      <div class="picto active" id="p-watch" onclick="openSettings()" title="Modifier les paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><rect x="9.5" y="2" width="5" height="5" rx="1"/><rect x="9.5" y="17" width="5" height="5" rx="1"/><polyline points="12 9.5 12 12 13.5 13.5"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label">Montre connectée</span></div>
+      <div class="picto active" id="p-exit" onclick="openSettings()" title="Modifier les paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><path d="M9 10 Q8 15 9 19"/><path d="M15 10 Q16 15 15 19"/><path d="M9 13 h6"/><path d="M7 19 h10"/><text x="3" y="20" font-size="7" font-weight="bold" fill="#cc0000" stroke="none" font-family="sans-serif">1h</text><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label">Sortie avant 1h</span></div>
+      <div class="picto active" id="p-bag" onclick="openSettings()" title="Modifier les paramètres"><svg viewBox="0 0 24 24"><path d="M8 8 C8 5 10 3 12 3 C14 3 16 5 16 8"/><rect x="4" y="8" width="16" height="13" rx="2"/><line x1="4" y1="13" x2="20" y2="13"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label">Sacs près des tables</span></div>
+      <div class="picto active" id="p-noise" onclick="openSettings()" title="Modifier les paramètres"><svg viewBox="0 0 24 24"><path d="M4 4 h10 a2 2 0 0 1 2 2 v4 a2 2 0 0 1 -2 2 H8 l-3 3 v-3 H4 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 z"/><path d="M14 10 h4 a2 2 0 0 1 2 2 v3 a2 2 0 0 1 -2 2 h-1 v2 l-2.5 -2 H14 a2 2 0 0 1 -2 -2 v-1"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label">Bavardage</span></div>
+    </div>
+  </div>
+</header>
+
+<div id="exam-blocs" class="exam-blocs"></div>
+<div class="hb-spacer"></div>
+
+<div class="copie-cadre copie-haut">
+  <div class="cadre-label-vert">Dans ce cadre</div>
+  <div class="cadre-content">
+    <div class="copie-header-tag">Informations à reporter sur la copie</div>
+    <div class="line">
+      <div class="line-half">
+        <span class="label">Académie :</span>
+        <select id="f-academie-select" class="field save-data" onchange="onAcademieChange(this)">
+          <option value="">-- Choisir --</option><option>Aix-Marseille</option><option>Amiens</option><option>Besançon</option><option>Bordeaux</option><option>Clermont-Ferrand</option><option>Corse</option><option>Créteil</option><option>Dijon</option><option>Grenoble</option><option>Guadeloupe</option><option>Guyane</option><option>La Réunion</option><option>Lille</option><option>Limoges</option><option>Lyon</option><option>Martinique</option><option>Mayotte</option><option>Montpellier</option><option>Nancy-Metz</option><option>Nantes</option><option>Nice</option><option>Normandie</option><option>Nouvelle-Calédonie</option><option>Orléans-Tours</option><option>Paris</option><option>Poitiers</option><option>Polynésie française</option><option>Reims</option><option>Rennes</option><option>Strasbourg</option><option>Toulouse</option><option>Versailles</option><option value="__autre__">Autre…</option>
+        </select>
+        <input type="text" id="f-academie" class="field save-data" style="display:none" placeholder="Saisir…" onblur="onAcademieBlur(this)">
+      </div>
+      <div class="line-half"><span class="label">Session :</span><input type="text" id="f-session" class="field save-data"><span class="label" style="margin-left:auto;font-size:.6rem;opacity:.5;white-space:nowrap">Modèle EN.</span></div>
+    </div>
+    <div class="line"><span class="label">Examen ou Concours :</span><input type="text" id="f-examen" class="field save-data"><span class="label">Série* :</span><select id="f-serie-select" class="field save-data" style="width:160px" onchange="onSerieChange(this)"><option value="">-- Choisir --</option><option value="Générale">Générale</option><option value="Technologique">Technologique</option><option value="Professionnelle">Professionnelle</option><option value="__autre__">Autre…</option></select><input type="text" id="f-serie" class="field save-data" style="width:140px;display:none" placeholder="Saisir…" onblur="onSerieBlur(this)"></div>
+    <div class="line"><span class="label">Spécialité/option :</span><input type="text" id="f-spe" class="field save-data"><span class="label">Repère de l'épreuve :</span><input type="text" id="f-repere" class="field save-data" style="width:180px"></div>
+    <div class="line"><span class="label">Épreuve/sous-épreuve :</span><input type="text" id="f-epreuve" class="field save-data"></div>
+    <div class="line"><span class="label">NOM :</span><input type="text" id="nom" class="field save-data"></div>
+    <div class="line" style="justify-content:space-between;"><span class="label">Prénoms :</span><input type="text" id="prenoms" class="field save-data"><span class="label" style="white-space:nowrap;margin-left:auto;padding-left:12px;flex-shrink:0;">N° du candidat</span><input type="text" id="numero_candidat" class="field save-data cadre" style="max-width:390px;min-width:390px;flex-shrink:0;"></div>
+    <div class="line"><span class="label">Né(e) le :</span><input type="text" id="naissance" class="field save-data"><span class="sublabel" style="margin-left:8px;font-size:.55rem;opacity:.55">(le numéro est celui qui figure sur la convocation ou la liste d'appel)</span></div>
+  </div>
+</div>
+<div id="sep-tirets" style="border-top:2px dashed var(--border);margin:2px 0"></div>
+<div class="copie-cadre copie-bas">
+  <div class="cadre-label-vert">NE RIEN ÉCRIRE</div>
+  <div class="cadre-content">
+    <div class="line"><span class="label">Examen ou Concours :</span><input type="text" id="f-examen2" class="field" readonly tabindex="-1"><span class="label">Série* :</span><input type="text" id="f-serie2" class="field" style="width:110px" readonly tabindex="-1"></div>
+    <div class="line"><span class="label">Spécialité/option :</span><input type="text" id="f-spe2" class="field" readonly tabindex="-1"></div>
+    <div class="line"><span class="label">Repère de l'épreuve :</span><input type="text" id="f-repere2" class="field" readonly tabindex="-1"></div>
+    <div class="line"><span class="label">Épreuve/sous-épreuve :</span><input type="text" id="f-epreuve2" class="field" readonly tabindex="-1"><span class="sublabel">(Préciser, s'il y a lieu, le sujet choisi)</span></div>
+  </div>
+  <div class="cadre-note">Numérotez chaque page (dans le cadre en bas de la page) et placez les feuilles intercalaires dans le bon sens.</div>
+</div>
+
+<div class="ccyc-wrapper" id="ccyc-bloc">
+  <div class="ccyc-title">Modèle CCYC — Santorin</div>
+  <div class="ccyc-info">
+    <div class="ccyc-info-line"><span class="ccyc-info-label">Concours / Examen :</span><input type="text" id="ccyc-examen" class="ccyc-info-field save-data"><span class="ccyc-info-label" style="margin-left:20px">Section / Spécialité / Série :</span><input type="text" id="ccyc-serie" class="ccyc-info-field save-data" style="max-width:230px"></div>
+    <div class="ccyc-info-line"><span class="ccyc-info-label">Épreuve :</span><input type="text" id="ccyc-epreuve" class="ccyc-info-field save-data"><span class="ccyc-info-label" style="margin-left:20px">Matière :</span><input type="text" id="ccyc-matiere" class="ccyc-info-field save-data" style="max-width:230px"></div>
+  </div>
+  <div class="ccyc-consignes"><div class="ccyc-consignes-left"><span class="ccyc-consignes-title">Consignes</span><ul class="ccyc-consignes-list"><li>Remplir soigneusement en MAJUSCULES le cadre d'identification sur toutes les copies.</li><li>Aucun signe distinctif ne doit permettre d'identifier le candidat.</li><li>Ne joindre aucun brouillon et n'effectuer aucun collage et aucun agrafage.</li><li>Écrire à l'encre foncée et éviter d'utiliser du blanc correcteur.</li></ul></div><div class="ccyc-consignes-right"><span class="ccyc-info-label">Session :</span><input type="text" id="ccyc-session" class="ccyc-info-field save-data" style="margin-top:6px"></div></div>
+</div>
+<div class="hb-spacer"></div>
+</div>
+
+<div id="alert-banner"></div>
+<div class="zoom-tools"><button class="btn" onclick="adjustZoom(-10)" title="Zoom arrière">－</button><span class="zoom-label" id="zoom-label">100%</span><button class="btn" onclick="adjustZoom(10)" title="Zoom avant">＋</button></div>
+<div class="admin-tools"><button class="btn" onclick="openSettings()">⚙️ Paramètres</button><button class="btn" onclick="toggleTheme()">🌓 Thème</button><button class="btn" onclick="toggleFullScreen()">🖥️ Plein écran</button><button class="btn" onclick="shareURL()">🔗 Partager</button><button class="btn" onclick="openInfo()">?</button></div>
+
+<div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-label="Paramètres"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>Réglages</h2>
+  <div class="settings-section"><div class="settings-section-title">📄 Afficher le modèle de copie</div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-aucun" value="aucun" onchange="setModeleCopie('aucun')"><label for="modele-aucun"><strong>Aucun</strong></label></div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-en" value="en" checked onchange="setModeleCopie('en')"><label for="modele-en"><strong>Modèle EN</strong> <span style="font-weight:400;opacity:.7">(Bac, DNB…)</span></label></div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-ccyc" value="ccyc" onchange="setModeleCopie('ccyc')"><label for="modele-ccyc"><strong>Modèle CCYC</strong> <span style="font-weight:400;opacity:.7">– Santorin (©DNE)</span></label></div></div>
+  <div class="settings-section"><div class="settings-section-title">⏱️ Gestion horaire des épreuves</div><div id="exam-settings-list"></div><div class="exam-settings-actions"><button type="button" class="btn btn-small" onclick="addExamFromSettings()">＋ Ajouter une épreuve</button><button type="button" class="btn btn-small" onclick="testEndSound()">🔊 Tester le son de fin</button></div><p class="settings-help">Chaque épreuve peut être renommée, masquée, supprimée ou ajoutée. Le son de fin est joué une seule fois quand le temps restant passe à zéro. Pour autoriser le son dans le navigateur, cliquez une fois sur “Tester le son de fin” avant l’épreuve.</p></div>
+  <div class="settings-section"><div class="settings-section-title">Interdictions</div><div class="picto-opt"><input type="checkbox" id="opt-tel" checked onchange="togglePicto('p-tel',this.checked)"><label for="opt-tel">Smartphone</label></div><div class="picto-opt"><input type="checkbox" id="opt-watch" checked onchange="togglePicto('p-watch',this.checked)"><label for="opt-watch">Montre connectée</label></div><div class="picto-opt"><input type="checkbox" id="opt-exit" checked onchange="togglePicto('p-exit',this.checked)"><label for="opt-exit">Sortie avant 1h</label></div><div class="picto-opt"><input type="checkbox" id="opt-bag" checked onchange="togglePicto('p-bag',this.checked)"><label for="opt-bag">Sacs près des tables</label></div><div class="picto-opt"><input type="checkbox" id="opt-noise" checked onchange="togglePicto('p-noise',this.checked)"><label for="opt-noise">Bavardage</label></div></div>
+  <div class="settings-section"><div class="settings-section-title">Options d'affichage</div><div class="picto-opt"><input type="checkbox" id="opt-secondes" checked onchange="saveAll()"><label for="opt-secondes">Afficher les secondes</label></div></div>
+  <div class="settings-section" id="section-source"><div class="settings-section-title">⏱️ Source de l'heure</div><div id="time-source-status" style="font-size:.78rem;margin-bottom:10px;line-height:1.5"></div><div class="picto-opt"><input type="radio" name="time-source" id="src-pc" value="pc" checked onchange="setTimeSource('pc')"><label for="src-pc">🖥️ Horloge du PC <span style="font-weight:400;opacity:.7">(fonctionne sans internet)</span></label></div><div class="picto-opt"><input type="radio" name="time-source" id="src-net" value="net" onchange="setTimeSource('net')"><label for="src-net">🌐 Heure internet <span style="font-weight:400;opacity:.7">(nécessite une connexion)</span></label></div></div>
+</div></div>
+
+<div id="shareModal" class="modal" role="dialog" aria-modal="true" aria-label="Partager"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>🔗 Partager cette configuration</h2><p class="share-hint">Cette URL contient les champs pré-remplis, les épreuves ajoutées, leurs noms, horaires et durées.</p><div class="share-url-box"><input type="text" id="share-url-input" readonly onclick="this.select()"><button class="btn-copy" onclick="copyShareURL()">📋 Copier</button></div><p class="share-hint" style="margin-top:4px">Cliquez sur l'URL pour la sélectionner.</p><div class="share-fields-list" id="share-fields-preview"></div></div></div>
+<div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-label="Informations"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>Informations</h2><ul style="line-height:1.7"><li>Noms des épreuves modifiables dans Réglages.</li><li>Nombre d’épreuves illimité : bouton “Ajouter une épreuve”.</li><li>Son court automatique à la fin de chaque épreuve.</li><li>Le son peut nécessiter une interaction utilisateur : bouton “Tester le son de fin”.</li><li>Zoom, thème sombre, plein écran et lien de partage.</li></ul></div></div>
+<div id="share-toast">✓ URL copiée !</div>
+
+<script>
+const KEY='copieEx_v22_epreuves_dynamiques';
+let timeOffset=0,timeSource='pc',netTimeDiff=null,modeleCopie='en',zoomLevel=100,audioCtx=null;
+let exams=[];
+const examRuntimeState={};
+const examColors=['#000091','#2e7d32','#5c6bc0','#558b2f','#8e24aa','#006c9c','#c26400','#008941','#b00020','#6d4c41'];
+const syncMap={'f-examen':'f-examen2','f-serie':'f-serie2','f-spe':'f-spe2','f-epreuve':'f-epreuve2','f-repere':'f-repere2'};
+window.addEventListener('load',()=>{
+ const now=new Date();bindSaveInputs();const loaded=loadAll();
+ if(!loaded){exams=[makeExam('Épreuve 1',toHHMM(now),'01:00',true)];const session=document.getElementById('f-session');if(session)session.value=now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});}
+ loadFromURL();ensureAtLeastOneExam();loadZoom();renderExams();setModeleCopie(modeleCopie,false);update();setInterval(update,1000);checkInternetTime();setInterval(checkInternetTime,600000);
+});
+document.addEventListener('pointerdown',()=>unlockAudio(),{once:true});
+document.addEventListener('keydown',()=>unlockAudio(),{once:true});
+function toHHMM(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function makeExam(name,start,duration,visible=true){return{id:'ex'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,start,duration,visible}}
+function ensureAtLeastOneExam(){if(!Array.isArray(exams)||exams.length===0)exams=[makeExam('Épreuve 1',toHHMM(new Date()),'01:00',true)]}
+function safeText(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function normalizeTimeValue(value,fallback){return /^\d{2}:\d{2}$/.test(value||'')?value:fallback}
+function calcEnd(start,duration){if(!start||!duration)return'';const[sh,sm]=start.split(':').map(Number),[dh,dm]=duration.split(':').map(Number);if([sh,sm,dh,dm].some(Number.isNaN))return'';const total=sh*60+sm+dh*60+dm;return String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0')}
+function renderExams(){
+ const container=document.getElementById('exam-blocs'),settings=document.getElementById('exam-settings-list');if(!container||!settings)return;container.innerHTML='';settings.innerHTML='';
+ exams.forEach((exam,index)=>{
+  const color=examColors[index%examColors.length];
+  if(exam.visible){
+   const end=calcEnd(exam.start,exam.duration);const row=document.createElement('div');row.className='hb-row';row.id='hbr-'+exam.id;
+   row.innerHTML=`<div class="hb-spacer"></div><div class="horaire-bloc dynamic-exam" id="hb-${exam.id}" style="--exam-color:${color}"><div class="hb-body"><div class="hb-timing-row"><span class="hb-title" id="title-${exam.id}">${safeText(exam.name)}</span><div class="time-field-wrap"><span class="time-label-chip">Début</span><input type="time" id="start-${exam.id}" value="${safeText(exam.start)}" onchange="updateExam('${exam.id}','start',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div class="time-field-wrap" style="border-color:var(--accent);background:var(--blue-cumulus);"><span class="time-label-chip">Durée</span><input type="time" id="dur-${exam.id}" value="${safeText(exam.duration)}" min="00:01" onchange="updateExam('${exam.id}','duration',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><path d="M12 2 L12 12 L17 12"/><circle cx="12" cy="12" r="9"/></svg></div><div class="time-field-wrap readonly"><span class="time-label-chip">Fin</span><input type="time" id="end-${exam.id}" value="${safeText(end)}" readonly tabindex="-1"></div></div><div class="hb-progress"><div class="hb-bar" id="hb-bar-${exam.id}"></div></div></div><div class="hb-remaining"><div class="hb-rem-label">Temps restant</div><div class="hb-rem-value" id="hb-rem-${exam.id}">—</div></div></div>`;
+   container.appendChild(row);
+  }
+  const item=document.createElement('div');item.className='exam-settings-row';
+  item.innerHTML=`<input type="checkbox" ${exam.visible?'checked':''} title="Afficher cette épreuve" onchange="updateExam('${exam.id}','visible',this.checked)"><input type="text" value="${safeText(exam.name)}" placeholder="Nom de l'épreuve" onchange="updateExam('${exam.id}','name',this.value)" oninput="previewExamName('${exam.id}',this.value)"><input type="time" value="${safeText(exam.start)}" onchange="updateExam('${exam.id}','start',this.value)" title="Début"><input type="time" value="${safeText(exam.duration)}" min="00:01" onchange="updateExam('${exam.id}','duration',this.value)" title="Durée"><button type="button" class="exam-delete-btn" onclick="removeExam('${exam.id}')" title="Supprimer">×</button>`;
+  settings.appendChild(item);
+ });
+ update();
+}
+function updateExam(id,field,value){const exam=exams.find(e=>e.id===id);if(!exam)return;if(field==='visible')exam.visible=Boolean(value);if(field==='name')exam.name=String(value||'').trim()||'Épreuve';if(field==='start')exam.start=normalizeTimeValue(value,toHHMM(new Date()));if(field==='duration')exam.duration=normalizeTimeValue(value,'01:00');if(field==='start'||field==='duration')examRuntimeState[id]={lastPhase:null,notified:false};saveAll();renderExams()}
+function previewExamName(id,value){const title=document.getElementById('title-'+id);if(title)title.textContent=value||'Épreuve'}
+function addExamFromSettings(){const last=exams[exams.length-1];const start=last?calcEnd(last.start,last.duration):toHHMM(new Date());exams.push(makeExam('Épreuve '+(exams.length+1),start,'01:00',true));saveAll();renderExams()}
+function removeExam(id){exams=exams.filter(e=>e.id!==id);delete examRuntimeState[id];ensureAtLeastOneExam();saveAll();renderExams()}
+function getExamTiming(exam,now){const endValue=calcEnd(exam.start,exam.duration);if(!exam.start||!exam.duration||!endValue)return null;const start=new Date(now),end=new Date(now);const[sh,sm]=exam.start.split(':').map(Number),[eh,em]=endValue.split(':').map(Number);start.setHours(sh,sm,0,0);end.setHours(eh,em,0,0);if(end<=start)end.setDate(end.getDate()+1);return{start,end,total:end-start,remaining:end-now,endValue}}
+function update(){
+ const now=getNow(),dateEl=document.getElementById('current-date'),timeEl=document.getElementById('current-time');
+ if(dateEl)dateEl.innerText=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+ const showSec=document.getElementById('opt-secondes')?.checked!==false;if(timeEl)timeEl.innerText=showSec?now.toLocaleTimeString('fr-FR'):now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+ let firstVisibleResult=null;
+ exams.forEach(exam=>{if(!exam.visible)return;const bloc=document.getElementById('hb-'+exam.id),remEl=document.getElementById('hb-rem-'+exam.id),bar=document.getElementById('hb-bar-'+exam.id),endEl=document.getElementById('end-'+exam.id);if(!bloc||!remEl||!bar)return;bloc.classList.remove('hb-warn','hb-danger','hb-done');const timing=getExamTiming(exam,now);if(!timing){remEl.innerText='—';bar.style.width='100%';return}if(endEl)endEl.value=timing.endValue;bar.style.width=Math.max(0,Math.min(100,(timing.remaining/timing.total)*100))+'%';const remMin=Math.floor(timing.remaining/60000);if(!firstVisibleResult)firstVisibleResult={remMin};const state=examRuntimeState[exam.id]||{lastPhase:null,notified:false};if(timing.remaining<=0){remEl.innerText='TERMINÉ';bloc.classList.add('hb-done');if(state.lastPhase==='running'&&!state.notified){state.notified=true;playEndSound();bloc.classList.add('hb-ended-flash');setTimeout(()=>bloc.classList.remove('hb-ended-flash'),4000)}state.lastPhase='done'}else{const h=Math.floor(remMin/60),m=String(remMin%60).padStart(2,'0');remEl.innerText=h>0?`${h}h${m}`:`${remMin} min`;if(remMin<10)bloc.classList.add('hb-danger');else if(remMin<30)bloc.classList.add('hb-warn');state.lastPhase='running';state.notified=false}examRuntimeState[exam.id]=state});
+ const app=document.getElementById('app'),bnr=document.getElementById('alert-banner');if(app)app.classList.remove('alert-warning','alert-danger','alert-done');if(bnr)bnr.innerText='';if(firstVisibleResult&&app&&bnr){if(firstVisibleResult.remMin<=0)app.classList.add('alert-done');else if(firstVisibleResult.remMin<10){app.classList.add('alert-danger');bnr.innerText='⚠️ Moins de 10 minutes — Rendez vos copies !'}else if(firstVisibleResult.remMin<30){app.classList.add('alert-warning');bnr.innerText='⚠️ Moins de 30 minutes restantes'}}}
+function unlockAudio(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume()}catch(e){}}
+function getAudioCtx(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function playTone(ctx,freq,start,duration,gainValue){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,start);gain.gain.setValueAtTime(gainValue,start);gain.gain.exponentialRampToValueAtTime(0.001,start+duration);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration)}
+function playEndSound(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();const t=ctx.currentTime+0.04;playTone(ctx,880,t,0.16,0.22);playTone(ctx,1175,t+0.22,0.22,0.24)}catch(e){}}
+function testEndSound(){unlockAudio();playEndSound();showToast('🔊 Son de fin testé')}
+function getNow(){return new Date(Date.now()+timeOffset)}
+async function checkInternetTime(){const sources=[{url:'https://timeapi.io/api/time/current/zone?timeZone=UTC',parse:d=>Date.parse(d.dateTime+'Z')},{url:'https://worldtimeapi.org/api/timezone/Etc/UTC',parse:d=>Date.parse(d.utc_datetime)},{url:'https://www.google.com/generate_204',head:true,parse:(d,h)=>Date.parse(h.get('date'))}];for(const src of sources){try{const t0=Date.now();const r=await fetch(src.url,{method:src.head?'HEAD':'GET',cache:'no-store',mode:'cors'});const t1=Date.now();if(!r.ok&&r.status!==204)continue;const serverMs=src.head?src.parse(null,r.headers):src.parse(await r.json());if(!Number.isFinite(serverMs))continue;netTimeDiff=Math.round((serverMs+((t1-t0)/2)-t1)/1000);updateTimeSourceStatus();const alertBtn=document.getElementById('time-alert-btn');if(alertBtn)alertBtn.style.display=Math.abs(netTimeDiff)>=180?'inline-block':'none';if(timeSource==='net')timeOffset=netTimeDiff*1000;return}catch(e){}}netTimeDiff=null;updateTimeSourceStatus()}
+function updateTimeSourceStatus(){
+ const el=document.getElementById('time-source-status');
+ if(!el)return;
+ if(netTimeDiff===null){el.innerHTML="<span style='opacity:.6'>Vérification impossible. L’heure du PC est utilisée.</span>";return}
+ const abs=Math.abs(netTimeDiff),sign=netTimeDiff>0?'retard':'avance';
+ if(abs<60){el.innerHTML=`<span style="color:var(--green-emerald)">Heure du PC synchronisée (écart : ${abs}s)</span>`}
+ else{const min=Math.floor(abs/60),sec=abs%60;el.innerHTML=`<span style="color:var(--warning)">Le PC a <strong>${min}min${sec?sec+'s':''} de ${sign}</strong> par rapport à l’heure internet.</span>`}
+}
+function setTimeSource(src){timeSource=src;if(src==='net'&&netTimeDiff!==null){timeOffset=netTimeDiff*1000;const b=document.getElementById('time-alert-btn');if(b)b.style.display='none'}else timeOffset=0;const rb=document.getElementById('src-'+src);if(rb)rb.checked=true;saveAll()}
+function bindSaveInputs(){document.querySelectorAll('.save-data').forEach(el=>{el.addEventListener('input',()=>{const target=syncMap[el.id];if(target&&document.getElementById(target))document.getElementById(target).value=el.value.toUpperCase();saveAll()})})}
+function saveAll(){const d={theme:document.documentElement.getAttribute('data-theme'),modele:modeleCopie,timeSource,exams};document.querySelectorAll('.save-data').forEach(el=>d[el.id]=el.value);['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el)d[id]=el.checked});localStorage.setItem(KEY,JSON.stringify(d))}
+function loadAll(){const raw=localStorage.getItem(KEY);if(!raw)return false;try{const d=JSON.parse(raw);if(d.theme)document.documentElement.setAttribute('data-theme',d.theme);if(d.modele)modeleCopie=d.modele;if(d.timeSource)timeSource=d.timeSource;if(Array.isArray(d.exams))exams=d.exams.map((e,i)=>({id:e.id||('ex'+i),name:e.name||('Épreuve '+(i+1)),start:normalizeTimeValue(e.start,toHHMM(new Date())),duration:normalizeTimeValue(e.duration,'01:00'),visible:e.visible!==false}));document.querySelectorAll('.save-data').forEach(el=>{if(d[el.id]!==undefined){el.value=d[el.id];el.dispatchEvent(new Event('input'))}});['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el&&d[id]!==undefined)el.checked=d[id]});['tel','watch','exit','bag','noise'].forEach(n=>{const cb=document.getElementById('opt-'+n),p=document.getElementById('p-'+n);if(cb&&p)p.classList.toggle('active',cb.checked)});const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;syncSelectStateFromText('f-academie-select','f-academie');syncSelectStateFromText('f-serie-select','f-serie');return true}catch(e){return false}}
+function encodeData(obj){
+ try{
+  const json=JSON.stringify(obj);
+  const bytes=new TextEncoder().encode(json);
+  let binary='';
+  bytes.forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
+ }catch(e){console.error('Erreur encodage partage',e);return ''}
+}
+function decodeData(str){
+ const normalized=String(str||'').replace(/-/g,'+').replace(/_/g,'/');
+ const padded=normalized+'='.repeat((4-normalized.length%4)%4);
+ const binary=atob(padded);
+ const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+ return JSON.parse(new TextDecoder().decode(bytes));
+}
+function collectShareConfig(){
+ const fields={};
+ document.querySelectorAll('.save-data').forEach(el=>{fields[el.id]=el.value||''});
+ const options={};
+ ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el)options[id]=el.checked});
+ return {v:4,exams,modele:modeleCopie,timeSource,fields,options,theme:document.documentElement.getAttribute('data-theme')||'light'};
+}
+function applyShareConfig(cfg){
+ if(!cfg||typeof cfg!=='object')return;
+ if(cfg.theme)document.documentElement.setAttribute('data-theme',cfg.theme);
+ if(cfg.modele)modeleCopie=cfg.modele;
+ if(cfg.timeSource)timeSource=cfg.timeSource;
+ if(Array.isArray(cfg.exams)){
+  exams=cfg.exams.map((e,i)=>({
+   id:e.id||makeExam('',toHHMM(new Date()),'01:00',true).id,
+   name:e.name||('Épreuve '+(i+1)),
+   start:normalizeTimeValue(e.start,toHHMM(new Date())),
+   duration:normalizeTimeValue(e.duration,'01:00'),
+   visible:e.visible!==false
+  }));
+ }
+ if(cfg.fields){
+  Object.entries(cfg.fields).forEach(([id,value])=>{
+   const el=document.getElementById(id);
+   if(el){el.value=value||'';el.dispatchEvent(new Event('input'))}
+  });
+ }
+ if(cfg.options){
+  Object.entries(cfg.options).forEach(([id,value])=>{
+   const el=document.getElementById(id);
+   if(el)el.checked=Boolean(value);
+  });
+ }
+ ['tel','watch','exit','bag','noise'].forEach(n=>{const cb=document.getElementById('opt-'+n),p=document.getElementById('p-'+n);if(cb&&p)p.classList.toggle('active',cb.checked)});
+ const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;
+ syncSelectStateFromText('f-academie-select','f-academie');
+ syncSelectStateFromText('f-serie-select','f-serie');
+}
+function buildShareURL(){
+ const base=window.location.origin+window.location.pathname;
+ const cfg=encodeData(collectShareConfig());
+ return base+(cfg?('?cfg='+cfg):'');
+}
+function loadFromURL(){
+ const params=new URLSearchParams(window.location.search);
+ if(params.has('cfg')){
+  try{applyShareConfig(decodeData(params.get('cfg')));saveAll();return}
+  catch(e){console.error('Erreur chargement cfg',e);showToast('Lien de partage invalide')}
+ }
+ // Compatibilité avec les anciens liens de test contenant ?exams=...
+ if(params.has('exams')){
+  try{
+   const legacy={exams:decodeData(params.get('exams')),modele:params.get('modele')||modeleCopie,fields:{},options:{}};
+   document.querySelectorAll('.save-data').forEach(el=>{if(params.has(el.id))legacy.fields[el.id]=params.get(el.id)});
+   ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{if(params.has(id))legacy.options[id]=params.get(id)==='1'});
+   applyShareConfig(legacy);saveAll();
+  }catch(e){console.error('Erreur chargement ancien lien',e)}
+ }
+}
+function shareURL(){const url=buildShareURL();document.getElementById('share-url-input').value=url;document.getElementById('share-fields-preview').innerHTML=exams.map(e=>`<div class="share-field-row"><span class="share-field-key">${safeText(e.name)}</span><span class="share-field-val">${safeText(e.start)} — durée ${safeText(e.duration)} ${e.visible?'':'(masquée)'}</span></div>`).join('');document.getElementById('shareModal').classList.add('open')}
+function copyShareURL(){const input=document.getElementById('share-url-input');input.select();navigator.clipboard?.writeText(input.value).then(()=>showToast('✓ URL copiée !')).catch(()=>{document.execCommand('copy');showToast('✓ URL copiée !')})}
+function showToast(msg){const t=document.getElementById('share-toast');if(!t)return;t.innerText=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function setModeleCopie(m,doSave=true){modeleCopie=['aucun','en','ccyc'].includes(m)?m:'en';const isEN=modeleCopie==='en',isCCYC=modeleCopie==='ccyc';const haut=document.querySelector('.copie-haut'),sep=document.getElementById('sep-tirets'),bas=document.querySelector('.copie-bas'),ccyc=document.getElementById('ccyc-bloc');if(haut)haut.style.display=isEN?'':'none';if(sep)sep.style.display=isEN?'':'none';if(bas)bas.style.display=isEN?'':'none';if(ccyc)ccyc.classList.toggle('active',isCCYC);const rb=document.getElementById('modele-'+modeleCopie);if(rb)rb.checked=true;if(doSave)saveAll()}
+function togglePicto(id,show){const el=document.getElementById(id);if(el)el.classList.toggle('active',show);saveAll()}
+function toggleTheme(){const r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'light':'dark');saveAll()}
+function adjustZoom(delta){zoomLevel=Math.min(150,Math.max(60,zoomLevel+delta));document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%';localStorage.setItem('copieEx_zoom',zoomLevel)}
+function loadZoom(){const saved=parseInt(localStorage.getItem('copieEx_zoom'));if(saved&&saved>=60&&saved<=150){zoomLevel=saved;document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%'}}
+function toggleFullScreen(){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}
+function openSettings(section){document.getElementById('settingsModal').classList.add('open');if(section==='source')setTimeout(()=>document.getElementById('section-source')?.scrollIntoView({behavior:'smooth',block:'center'}),80)}
+function openInfo(){document.getElementById('infoModal').classList.add('open')}
+function closeModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'))}
+window.addEventListener('click',e=>{if(e.target.classList.contains('modal'))closeModals()});window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
+function onAcademieChange(sel){selectOrOther(sel,'f-academie')}function onSerieChange(sel){selectOrOther(sel,'f-serie')}function onAcademieBlur(txt){otherBlur(txt,'f-academie-select')}function onSerieBlur(txt){otherBlur(txt,'f-serie-select')}
+function selectOrOther(sel,textId){const txt=document.getElementById(textId);if(sel.value==='__autre__'){sel.style.display='none';txt.style.display='';txt.value='';txt.focus()}else{txt.style.display='none';sel.style.display='';txt.value=sel.value}txt.dispatchEvent(new Event('input'));saveAll()}
+function otherBlur(txt,selectId){if(txt.value.trim()===''){const sel=document.getElementById(selectId);sel.value='';sel.style.display='';txt.style.display='none';txt.value='';txt.dispatchEvent(new Event('input'));saveAll()}}
+function syncSelectStateFromText(selectId,textId){const sel=document.getElementById(selectId),txt=document.getElementById(textId);if(!sel||!txt)return;const val=txt.value;const opt=[...sel.options].find(o=>(o.value||o.text)===val);if(opt&&opt.value!=='__autre__'){sel.value=opt.value||opt.text;sel.style.display='';txt.style.display='none'}else if(val){sel.value='__autre__';sel.style.display='none';txt.style.display=''}}
+</script>
+</body>
+</html>
