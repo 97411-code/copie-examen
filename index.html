@@ -1,3 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copie-Examen : affichage et chronomètre d'examen</title>
+<meta name="description" content="Affichage vidéoprojecteur pour examens : horloge, épreuves dynamiques, consignes et modèle de copie.">
+<style>
+:root{
+  --blue-france:#000091;--blue-cumulus:#e8edff;--red-marianne:#e1000f;
+  --grey-850:#3a3a3a;--grey-200:#eee;--grey-50:#f6f6f6;--white:#fff;
+  --warning:#b34000;--warning-bg:#fff3e0;--danger:#ce0500;--danger-bg:#ffe8e6;
+  --green-emerald:#008941;--bg:var(--grey-50);--surface:var(--white);--text:var(--grey-850);
+  --title:#161616;--border:#161616;--accent:var(--blue-france);
+  --field-color:#0055cc;--field-border:#0055cc;--font:'Marianne','Segoe UI',Arial,sans-serif;color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#161616;--surface:#1e1e1e;--text:#e0e0e0;--title:#fff;--border:#444;
+  --accent:#8585ff;--blue-france:#8585ff;--blue-cumulus:#1e1e3a;
+  --green-emerald:#4cca7e;--warning:#ffaa44;--warning-bg:#2a1a00;--danger:#ff5555;
+  --danger-bg:#2a0a0a;--grey-200:#2c2c2c;--field-color:#7aacff;--field-border:#7aacff;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100vh;background:var(--bg);color:var(--text);font-family:var(--font)}
+.main-screen{display:flex;flex-direction:column;min-height:100vh;height:100vh;overflow-y:auto;padding:6px 28px 4px}
+header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
+.header-top{display:flex;align-items:center;justify-content:center;gap:20px}
+.clock-block{text-align:left;flex-shrink:0;border-right:2px solid var(--border);padding-right:28px;margin-right:4px;width:188px}
+#current-date{font-size:.72rem;text-transform:uppercase;font-weight:700;color:var(--accent);letter-spacing:.06em;white-space:nowrap;min-width:6.5ch}
+#current-time{font-size:2.8rem;font-weight:800;color:var(--title);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:6.5ch;display:inline-block;padding-right:16px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pictos-bar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;flex:1}
+.picto{display:none;flex-direction:column;align-items:center;text-align:center;background:#fff0f0;border:2px solid #ff4b4b;border-radius:6px;padding:6px 10px;width:100px;min-height:74px;justify-content:center;flex-shrink:0;cursor:pointer}
+.picto.active{display:flex}.picto:hover{opacity:.85}
+.picto svg{width:32px;height:32px;fill:none;stroke:#cc0000;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:4px;flex-shrink:0}
+.picto-label{font-size:.5rem;font-weight:800;text-transform:uppercase;color:#cc0000;line-height:1.15;letter-spacing:.02em;min-height:2.4em;display:block;text-align:center;padding:4px 2px 1px;border-radius:3px;border:1px dashed transparent;cursor:text;outline:none;min-width:60px;word-break:break-word;white-space:normal}
+.picto-label:hover{border-color:#cc0000;background:rgba(255,255,255,.5)}
+.picto-label:focus{border-color:#cc0000;border-style:solid;background:#fff;cursor:text}
+:root[data-theme="dark"] .picto-label:hover{border-color:#ff8888;background:rgba(0,0,0,.3)}
+:root[data-theme="dark"] .picto-label:focus{background:#1a1a1a;border-color:#ff8888}
+:root[data-theme="dark"] .picto{background:#2a1515;border-color:#cc4444}:root[data-theme="dark"] .picto svg{stroke:#ff8888}:root[data-theme="dark"] .picto-label{color:#ff8888}
+.dnb-context{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:2px 0 4px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;text-align:center}
+.dnb-context span{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--title)}
+.dnb-context .dnb-context-main{background:var(--blue-cumulus);border-color:var(--accent);color:var(--accent)}
+.dnb-context .dnb-context-alert{background:var(--warning-bg);border-color:var(--warning);color:var(--warning)}
+.hb-spacer{flex:1;min-height:4px}.exam-blocs{display:flex;flex-direction:column;gap:0;flex:0 0 auto}.hb-row{display:flex;flex-direction:column;flex:0 0 auto}.hb-row .hb-spacer{flex:0 0 12px;min-height:12px}
+.horaire-bloc{display:flex;flex-direction:row;align-items:center;border:2px solid var(--border);border-radius:4px;overflow:hidden;background:var(--surface);width:100%;box-sizing:border-box}
+.horaire-bloc.exam-muted{opacity:.82;--exam-color:var(--grey-850)}
+:root[data-theme="dark"] .horaire-bloc.exam-muted{--exam-color:var(--text)}
+.horaire-bloc.dynamic-exam .hb-title{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:normal;flex-shrink:0;width:150px;min-width:120px;line-height:1.25;padding-right:4px;text-align:left;color:var(--exam-color,var(--accent))}
 .hb-body{flex:1;display:flex;flex-direction:column;padding:3px 8px;min-width:0}.hb-timing-row{display:flex;align-items:center;gap:5px}
 .time-field-wrap{display:flex;align-items:center;gap:4px;background:var(--surface);border:2px solid var(--border);border-radius:4px;padding:2px 6px;transition:border-color .2s;position:relative;flex-shrink:1;min-width:0}.time-field-wrap:focus-within{border-color:var(--accent);outline:2px solid #0000911a}.time-field-wrap.readonly{opacity:.65;background:var(--grey-200)}
 .time-label-chip{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);white-space:nowrap}.time-field-wrap .time-input{background:transparent;border:none;color:var(--title);font-family:var(--font);font-size:1.55rem;font-weight:800;outline:none;width:6ch;text-align:center}.time-icon{width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;flex-shrink:0;pointer-events:none;opacity:.75}
@@ -248,3 +298,328 @@ function copieOrdinal(n){return n===1?'1ère':n===2?'2ème':n+'ème'}
 function partStateKey(examId,partId){return examId+'::'+partId}
 function ensureAtLeastOneExam(){if(!Array.isArray(exams)||exams.length===0)exams=[makeExam('Épreuve 1',toHHMM(new Date()),'01:00',true)]}
 function safeText(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function normalizeTimeValue(value,fallback){return /^\d{2}:\d{2}$/.test(value||'')?value:fallback}
+function calcEnd(start,duration){if(!start||!duration)return'';const[sh,sm]=start.split(':').map(Number),[dh,dm]=duration.split(':').map(Number);if([sh,sm,dh,dm].some(Number.isNaN))return'';const total=sh*60+sm+dh*60+dm;return String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0')}
+function getTimingFromTimes(startHHMM,endHHMM,now){if(!startHHMM||!endHHMM)return null;const start=new Date(now),end=new Date(now);const[sh,sm]=startHHMM.split(':').map(Number),[eh,em]=endHHMM.split(':').map(Number);start.setHours(sh,sm,0,0);end.setHours(eh,em,0,0);if(end<=start)end.setDate(end.getDate()+1);return{start,end,total:end-start,remaining:end-now,endValue:endHHMM}}
+function getExamPartsTiming(exam,now){if(!examHasParts(exam))return null;let cursor=exam.start;return exam.parts.map((part,idx)=>{const dur=getPartDuration(part),endValue=calcEnd(cursor,dur),timing=getTimingFromTimes(cursor,endValue,now),row={part,index:idx,duration:dur,start:cursor,endValue};cursor=endValue;return timing?{...row,...timing,start:row.start,endValue:row.endValue,startDate:timing.start,endDate:timing.end}:row})}
+function getActivePartIndex(timings){if(!timings)return-1;const idx=timings.findIndex(t=>t.remaining>0);return idx>=0?idx:timings.length-1}
+function getDisplayPartIndex(timings,now=getNow()){if(!timings)return-1;const visible=timings.filter(t=>t.part.visible!==false);if(!visible.length)return-1;const running=visible.find(t=>t.startDate<=now&&t.endDate>now);if(running)return running.index;const next=visible.find(t=>t.startDate>now);if(next)return next.index;return visible[visible.length-1].index}
+function getPictoLabel(key){return String(pictoLabels[key]||DEFAULT_PICTO_LABELS[key]||'').trim()||DEFAULT_PICTO_LABELS[key]||''}
+function setPictoLabel(key,value){if(!PICTO_KEYS.includes(key))return;pictoLabels[key]=String(value||'').trim()||DEFAULT_PICTO_LABELS[key];renderPictoLabels();saveAll()}
+function renderPictoLabels(){PICTO_KEYS.forEach(key=>{const value=getPictoLabel(key);const head=document.getElementById('p-'+key+'-label');if(head&&document.activeElement!==head&&head.textContent!==value)head.textContent=value;const input=document.getElementById('label-'+key);if(input&&document.activeElement!==input&&input.value!==value)input.value=value})}
+function onPictoClick(e){if(e.target.classList&&e.target.classList.contains('picto-label'))return;openSettings()}
+function onPictoLabelKey(e){if(e.key==='Enter'){e.preventDefault();e.target.blur()}else if(e.key==='Escape'){e.preventDefault();e.target.textContent=getPictoLabel(e.target.dataset.key);e.target.blur()}}
+function onPictoLabelBlur(e,key){const value=String(e.target.textContent||'').replace(/\s+/g,' ').trim();setPictoLabel(key,value)}
+function updateAllPictos(){PICTO_KEYS.forEach(key=>{const cb=document.getElementById('opt-'+key),p=document.getElementById('p-'+key);if(cb&&p)p.classList.toggle('active',cb.checked)})}
+function formatTimeInput(input){
+ let value=input.value.replace(/[^0-9]/g,'');
+ if(value.length===0)return;
+ if(value.length<=2){input.value=value}
+ else if(value.length===3){input.value=value.slice(0,2)+':'+value.slice(2)}
+ else if(value.length===4){
+  const h=value.slice(0,2),m=value.slice(2,4);
+  const hNum=Math.min(23,parseInt(h)||0),mNum=Math.min(59,parseInt(m)||0);
+  input.value=String(hNum).padStart(2,'0')+':'+String(mNum).padStart(2,'0');
+  input.dispatchEvent(new Event('change',{bubbles:true}))
+ }
+ else if(value.length>4){
+  const h=value.slice(0,2),m=value.slice(2,4);
+  const hNum=Math.min(23,parseInt(h)||0),mNum=Math.min(59,parseInt(m)||0);
+  input.value=String(hNum).padStart(2,'0')+':'+String(mNum).padStart(2,'0');
+  input.dispatchEvent(new Event('change',{bubbles:true}))
+ }
+}
+function attachTimeInputHandlers(){
+ document.querySelectorAll('.time-input:not([readonly])').forEach(input=>{
+  input.removeEventListener('input',handleTimeInput);
+  input.addEventListener('input',handleTimeInput);
+  input.removeEventListener('blur',handleTimeBlur);
+  input.addEventListener('blur',handleTimeBlur);
+  input.removeEventListener('focus',handleTimeFocus);
+  input.addEventListener('focus',handleTimeFocus)
+ })
+}
+function handleTimeInput(e){formatTimeInput(e.target)}
+function handleTimeBlur(e){
+ const val=e.target.value.trim();
+ if(val&&!val.includes(':')){formatTimeInput(e.target)}
+ else if(val&&val.includes(':')){
+  const[h,m]=val.split(':').map(s=>parseInt(s)||0);
+  e.target.value=String(Math.min(23,h)).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0');
+  e.target.dispatchEvent(new Event('change',{bubbles:true}))
+ }
+}
+function handleTimeFocus(e){e.target.select()}
+function renderConsignes(){
+ const container=document.getElementById('consignes-blocs');if(!container)return;container.innerHTML='';
+ if(document.getElementById('opt-show-consignes')?.checked===false)return;
+ exams.forEach(exam=>{const visibleParts=getVisibleParts(exam);if(!exam.visible||!visibleParts.length)return;
+  const bloc=document.createElement('div');bloc.className='consignes-bloc';bloc.id='cons-'+exam.id;
+  const partCols=visibleParts.map(p=>`<th>${safeText(p.name)}</th>`).join('');
+  const durRow=visibleParts.map(p=>`<td>${safeText(formatDurationWithTT(p))}</td>`).join('');
+  const calcRow=visibleParts.map(p=>`<td class="${p.calculator?'calc-yes':'calc-no'}">${p.calculator?'✅ Autorisée':'❌ Non autorisée'+(p.calculator?'':' (sauf aménagement spécifique)')}</td>`).join('');
+  const supRow=visibleParts.map(p=>`<td>${safeText(copieOrdinal(p.copieNum)+' copie'+(p.collectNote?' ('+p.collectNote+')':''))}</td>`).join('');
+  bloc.innerHTML=`<div class="consignes-head"><div class="consignes-title">Consignes spécifiques — « ${safeText(exam.name)} » (${visibleParts.length} partie${visibleParts.length>1?'s':''} affichée${visibleParts.length>1?'s':''})</div><span class="consignes-badge">Nouveau</span></div><div class="consignes-notes"><p>${safeText(exam.distributionNote)}</p><p><span class="hl">${safeText(exam.paginationNote)}</span></p></div><table class="consignes-table"><thead><tr><th>Éléments</th>${partCols}</tr></thead><tbody><tr><td class="crit">Durée</td>${durRow}</tr><tr><td class="crit">Calculatrice</td>${calcRow}</tr><tr><td class="crit">Support</td>${supRow}</tr></tbody></table>`;
+  container.appendChild(bloc);
+ })}
+function renderPartTimerRow(exam,part,partIndex,color,active,featured=false){
+ const pid=part.id,eid=exam.id,rowId='hbr-'+eid+'-'+pid,blocId='hb-'+eid+'-'+pid;
+ const timings=getExamPartsTiming(exam,getNow()),pt=timings&&timings[partIndex],endValue=pt?pt.endValue:calcEnd(pt?pt.start:exam.start,getPartDuration(part));
+ const calcCls=part.calculator?'calc-yes':'calc-no',calcTxt=part.calculator?'✅ Calculatrice autorisée':'❌ Calculatrice interdite';
+ const activeCls=active?' active-part':'';
+ return`<div class="hb-row" id="${rowId}"><div class="hb-spacer"></div><div class="horaire-bloc dynamic-exam${featured?' featured-part':''}" id="${blocId}" style="--exam-color:${color}"><div class="hb-body"><div class="hb-timing-row"><span class="hb-title" id="title-${eid}-${pid}">${safeText(part.name)}</span><div class="time-field-wrap readonly"><span class="time-label-chip">Début</span><input type="text" class="time-input" id="start-${eid}-${pid}" value="${safeText(pt?pt.start:exam.start)}" readonly tabindex="-1"></div><div class="time-field-wrap readonly" style="border-color:var(--accent);background:var(--blue-cumulus);"><span class="time-label-chip">Durée</span><input type="text" class="time-input" id="dur-${eid}-${pid}" value="${safeText(getPartDuration(part))}" readonly tabindex="-1"></div><div class="time-field-wrap readonly"><span class="time-label-chip">Fin</span><input type="text" class="time-input" id="end-${eid}-${pid}" value="${safeText(endValue)}" readonly tabindex="-1"></div></div><div class="hb-part-meta"><span class="hb-badge ${calcCls}${activeCls}">${calcTxt}</span><span class="hb-badge copie${activeCls}">${safeText(copieOrdinal(part.copieNum)+' copie')}</span>${part.collectNote?`<span class="hb-badge${activeCls}">${safeText(part.collectNote)}</span>`:''}</div><div class="hb-progress"><div class="hb-bar" id="hb-bar-${eid}-${pid}"></div></div></div><div class="hb-remaining"><div class="hb-rem-label">Temps restant</div><div class="hb-rem-value" id="hb-rem-${eid}-${pid}">—</div></div></div></div>`;
+}
+function renderExams(){
+ const container=document.getElementById('exam-blocs'),settings=document.getElementById('exam-settings-list');if(!container||!settings)return;container.innerHTML='';settings.innerHTML='';renderDnbContext();setDnbPresetControls();renderConsignes();
+ exams.forEach((exam,index)=>{
+  const color=examColors[index%examColors.length],hasParts=examHasParts(exam);
+  if(exam.visible){
+   if(hasParts){
+    const timings=getExamPartsTiming(exam,getNow()),displayIdx=getDisplayPartIndex(timings),part=exam.parts[displayIdx];
+    if(part&&part.visible!==false){const wrap=document.createElement('div');wrap.innerHTML=renderPartTimerRow(exam,part,displayIdx,color,true,true);container.appendChild(wrap.firstElementChild)}
+   }else{
+    const end=calcEnd(exam.start,exam.duration);const row=document.createElement('div');row.className='hb-row';row.id='hbr-'+exam.id;const badges=[exam.note].filter(Boolean).map(v=>`<span class="hb-badge">${safeText(v)}</span>`).join('');const noteBadge=badges?`<div class="hb-part-meta">${badges}</div>`:'';
+    row.innerHTML=`<div class="hb-spacer"></div><div class="horaire-bloc dynamic-exam${exam.muted?' exam-muted':''}" id="hb-${exam.id}" style="--exam-color:${color}"><div class="hb-body"><div class="hb-timing-row"><span class="hb-title" id="title-${exam.id}">${safeText(exam.name)}</span><div class="time-field-wrap"><span class="time-label-chip">Début</span><input type="text" class="time-input" id="start-${exam.id}" value="${safeText(exam.start)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','start',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div class="time-field-wrap" style="border-color:var(--accent);background:var(--blue-cumulus);"><span class="time-label-chip">Durée</span><input type="text" class="time-input" id="dur-${exam.id}" value="${safeText(exam.duration)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','duration',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><path d="M12 2 L12 12 L17 12"/><circle cx="12" cy="12" r="9"/></svg></div><div class="time-field-wrap readonly"><span class="time-label-chip">Fin</span><input type="text" class="time-input" id="end-${exam.id}" value="${safeText(end)}" placeholder="00:00" readonly tabindex="-1"></div></div>${noteBadge}<div class="hb-progress"><div class="hb-bar" id="hb-bar-${exam.id}"></div></div></div><div class="hb-remaining"><div class="hb-rem-label">Temps restant</div><div class="hb-rem-value" id="hb-rem-${exam.id}">—</div></div></div>`;
+    container.appendChild(row);
+   }
+  }
+  const block=document.createElement('div');block.className='exam-settings-block';
+  const durCell=hasParts?`<span style="font-size:.72rem;opacity:.65;grid-column:3/5">Multi-parties</span>`:`<input type="text" class="time-input" value="${safeText(exam.duration)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','duration',this.value)" title="Durée">`;
+  const dayMeta=exam.day?`<div class="settings-help" style="margin:2px 0 6px 34px">${safeText(DNB_DAY_LABELS[exam.day]||exam.day)}${exam.note?' - '+safeText(exam.note):''}</div>`:'';
+  block.innerHTML=`${dayMeta}<div class="exam-settings-row"><input type="checkbox" ${exam.visible?'checked':''} title="Afficher cette épreuve" onchange="updateExam('${exam.id}','visible',this.checked)"><input type="text" value="${safeText(exam.name)}" placeholder="Nom de l'épreuve" onchange="updateExam('${exam.id}','name',this.value)" oninput="previewExamName('${exam.id}',this.value)"><input type="text" class="time-input" value="${safeText(exam.start)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','start',this.value)" title="Début">${durCell}<button type="button" class="exam-delete-btn" onclick="removeExam('${exam.id}')" title="Supprimer">×</button></div><div class="picto-opt" style="margin:4px 0 0 34px"><input type="checkbox" id="multipart-${exam.id}" ${hasParts?'checked':''} onchange="toggleExamMultipart('${exam.id}',this.checked)"><label for="multipart-${exam.id}">Plusieurs parties (consignes spécifiques)</label></div>`;
+  if(hasParts){
+   const panel=document.createElement('div');panel.className='exam-parts-panel';
+   panel.innerHTML=`<div class="part-settings-head"><span>Aff.</span><span>Partie</span><span>Durée</span><span>Durée TT</span><span title="Calculatrice">Calc.</span><span>Copie</span><span>Ramassage</span><span></span></div>`;
+   exam.parts.forEach(part=>{
+    const prow=document.createElement('div');prow.className='part-settings-row';
+    prow.innerHTML=`<input type="checkbox" ${part.visible!==false?'checked':''} onchange="updatePart('${exam.id}','${part.id}','visible',this.checked)" title="Afficher cette sous-épreuve"><input type="text" value="${safeText(part.name)}" placeholder="Nom de la partie" onchange="updatePart('${exam.id}','${part.id}','name',this.value)"><input type="text" class="time-input" value="${safeText(part.duration)}" placeholder="00:00" maxlength="5" onchange="updatePart('${exam.id}','${part.id}','duration',this.value)" title="Durée standard"><input type="text" class="time-input" value="${safeText(part.durationTT)}" placeholder="00:00" maxlength="5" onchange="updatePart('${exam.id}','${part.id}','durationTT',this.value)" title="Durée tiers-temps"><input type="checkbox" ${part.calculator?'checked':''} onchange="updatePart('${exam.id}','${part.id}','calculator',this.checked)" title="Calculatrice autorisée"><input type="number" min="1" max="9" value="${part.copieNum}" onchange="updatePart('${exam.id}','${part.id}','copieNum',this.value)" title="N° de copie"><input type="text" value="${safeText(part.collectNote)}" placeholder="Ex. Ramassée à l'issue…" onchange="updatePart('${exam.id}','${part.id}','collectNote',this.value)"><button type="button" class="exam-delete-btn" onclick="removePart('${exam.id}','${part.id}')" title="Supprimer la partie">×</button>`;
+    panel.appendChild(prow);
+   });
+   const footer=document.createElement('div');
+   footer.innerHTML=`<button type="button" class="btn btn-small" onclick="addPart('${exam.id}')">＋ Ajouter une partie</button><div class="exam-notes-row"><input type="text" value="${safeText(exam.distributionNote)}" placeholder="Note distribution du sujet" onchange="updateExam('${exam.id}','distributionNote',this.value)"><input type="text" value="${safeText(exam.paginationNote)}" placeholder="Note pagination des copies" onchange="updateExam('${exam.id}','paginationNote',this.value)"></div>`;
+   panel.appendChild(footer);
+   block.appendChild(panel);
+  }
+  settings.appendChild(block);
+ });
+ attachTimeInputHandlers();update();
+}
+function setTiersTemps(on){tiersTemps=!!on;const cb=document.getElementById('opt-tiers-temps');if(cb)cb.checked=tiersTemps;Object.keys(partRuntimeState).forEach(k=>delete partRuntimeState[k]);Object.keys(examRuntimeState).forEach(k=>delete examRuntimeState[k]);saveAll();renderExams()}
+function toggleExamMultipart(examId,enabled){const exam=exams.find(e=>e.id===examId);if(!exam)return;if(enabled){if(!exam.parts.length)exam.parts=getDefaultMathsParts()}else{exam.parts=[]}saveAll();renderExams()}
+function addPart(examId){const exam=exams.find(e=>e.id===examId);if(!exam)return;const n=exam.parts.length+1;exam.parts.push(makePart('Partie '+n,'00:20','00:27',false,n,''));saveAll();renderExams()}
+function removePart(examId,partId){const exam=exams.find(e=>e.id===examId);if(!exam)return;exam.parts=exam.parts.filter(p=>p.id!==partId);delete partRuntimeState[partStateKey(examId,partId)];if(!exam.parts.length)exam.parts=getDefaultMathsParts();saveAll();renderExams()}
+function updatePart(examId,partId,field,value){const exam=exams.find(e=>e.id===examId);if(!exam)return;const part=exam.parts.find(p=>p.id===partId);if(!part)return;if(field==='visible')part.visible=Boolean(value);if(field==='name')part.name=String(value||'').trim()||'Partie';if(field==='duration')part.duration=normalizeTimeValue(value,'00:20');if(field==='durationTT')part.durationTT=normalizeTimeValue(value,part.duration);if(field==='calculator')part.calculator=Boolean(value);if(field==='copieNum')part.copieNum=Math.max(1,parseInt(value,10)||1);if(field==='collectNote')part.collectNote=String(value||'');delete partRuntimeState[partStateKey(examId,partId)];saveAll();renderExams()}
+function updateExam(id,field,value){const exam=exams.find(e=>e.id===id);if(!exam)return;if(field==='visible')exam.visible=Boolean(value);if(field==='name')exam.name=String(value||'').trim()||'Épreuve';if(field==='start')exam.start=normalizeTimeValue(value,toHHMM(new Date()));if(field==='duration')exam.duration=normalizeTimeValue(value,'01:00');if(field==='distributionNote')exam.distributionNote=String(value||'');if(field==='paginationNote')exam.paginationNote=String(value||'');if(field==='start'||field==='duration'){examRuntimeState[id]={lastPhase:null,notified:false};Object.keys(partRuntimeState).forEach(k=>{if(k.startsWith(id+'::'))delete partRuntimeState[k]})}saveAll();renderExams()}
+function previewExamName(id,value){const title=document.getElementById('title-'+id);if(title)title.textContent=value||'Épreuve'}
+function getExamEndTime(exam){if(examHasParts(exam)){let cursor=exam.start;exam.parts.forEach(p=>{cursor=calcEnd(cursor,getPartDuration(p))});return cursor}return calcEnd(exam.start,exam.duration)}
+function addExamFromSettings(){const last=exams[exams.length-1];const start=last?getExamEndTime(last):toHHMM(new Date());exams.push(makeExam('Épreuve '+(exams.length+1),start,'01:00',true));saveAll();renderExams()}
+function removeExam(id){exams=exams.filter(e=>e.id!==id);delete examRuntimeState[id];Object.keys(partRuntimeState).forEach(k=>{if(k.startsWith(id+'::'))delete partRuntimeState[k]});ensureAtLeastOneExam();saveAll();renderExams()}
+function getExamTiming(exam,now){const endValue=calcEnd(exam.start,exam.duration);if(!exam.start||!exam.duration||!endValue)return null;const start=new Date(now),end=new Date(now);const[sh,sm]=exam.start.split(':').map(Number),[eh,em]=endValue.split(':').map(Number);start.setHours(sh,sm,0,0);end.setHours(eh,em,0,0);if(end<=start)end.setDate(end.getDate()+1);return{start,end,total:end-start,remaining:end-now,endValue}}
+function getExamSubject(name){
+ const n=String(name||'').toLowerCase();
+ if(n.includes('français')||n.includes('dictée'))return'Français';
+ if(n.includes('histoire')||n.includes('géographie')||n.includes('emc'))return'Histoire-Géographie EMC';
+ if(n.includes('science'))return'Sciences';
+ if(n.includes('math'))return'Mathématiques';
+ if(n.includes('langue')||n.includes('vivante'))return'Langue vivante étrangère';
+ return String(name||'').replace(/\s+-\s+.*/,'')||'';
+}
+function buildCopyExamInfo(exam,now){
+ const subject=getExamSubject(exam.name);
+ if(examHasParts(exam)){
+  const timings=getExamPartsTiming(exam,now)||[],visibleTimings=timings.filter(t=>t.part.visible!==false);
+  const active=visibleTimings.find(t=>t.startDate<=now&&t.endDate>now)||visibleTimings.find(t=>t.startDate>now)||visibleTimings[visibleTimings.length-1];
+  return{specialite:subject,epreuve:active?`${subject} - ${active.part.name}`:subject};
+ }
+ return{specialite:subject,epreuve:exam.name};
+}
+function getCopyExamInfo(now){
+ const candidates=exams.filter(e=>e.visible&&!e.muted).map(exam=>({exam,timing:getTimingFromTimes(exam.start,getExamEndTime(exam),now)})).filter(x=>x.timing);
+ const current=candidates.find(x=>x.timing.start<=now&&x.timing.end>now);
+ const next=candidates.filter(x=>x.timing.start>now).sort((a,b)=>a.timing.start-b.timing.start)[0];
+ const picked=current||next||candidates[candidates.length-1];
+ return picked?buildCopyExamInfo(picked.exam,now):null;
+}
+function syncCopyExamFields(now){
+ clearNoWriteFields();
+ if(modeleCopie!=='en')return;
+ const info=getCopyExamInfo(now);if(!info)return;
+ setFieldSilently('f-spe',info.specialite);
+ setFieldSilently('f-epreuve',info.epreuve);
+ clearNoWriteFields();
+}
+function updatePartTimer(exam,part,partIndex,timings,activeIdx,firstVisibleResult){
+ const eid=exam.id,pid=part.id,bloc=document.getElementById('hb-'+eid+'-'+pid),remEl=document.getElementById('hb-rem-'+eid+'-'+pid),bar=document.getElementById('hb-bar-'+eid+'-'+pid),endEl=document.getElementById('end-'+eid+'-'+pid),startEl=document.getElementById('start-'+eid+'-'+pid),durEl=document.getElementById('dur-'+eid+'-'+pid);
+ const labelEl=bloc?.querySelector('.hb-rem-label');
+ if(!bloc||!remEl||!bar)return;bloc.classList.remove('hb-warn','hb-danger','hb-done','hb-ended-flash');
+ const pt=timings[partIndex];if(!pt||!pt.total){remEl.innerText='—';bar.style.width='100%';return}
+ if(startEl)startEl.value=pt.start;if(durEl)durEl.value=getPartDuration(part);if(endEl)endEl.value=pt.endValue;
+ const now=getNow(),startDate=pt.startDate||pt.start,beforeStart=startDate>now,sk=partStateKey(eid,pid),state=partRuntimeState[sk]||{lastPhase:null,notified:false};
+ if(beforeStart){
+  if(labelEl)labelEl.innerText='Début dans';
+  remEl.innerText=formatMsShort(startDate-now);bar.style.width='100%';state.lastPhase='waiting';state.notified=false;partRuntimeState[sk]=state;return;
+ }
+ if(labelEl)labelEl.innerText='Temps restant';
+ bar.style.width=Math.max(0,Math.min(100,(pt.remaining/pt.total)*100))+'%';
+ const remMin=Math.floor(pt.remaining/60000),isLast=partIndex===exam.parts.length-1,isActive=partIndex===activeIdx;
+ if(isActive&&!firstVisibleResult.seen)firstVisibleResult.seen=true,firstVisibleResult.remMin=remMin,firstVisibleResult.collectMsg=null;
+ if(pt.remaining<=0){
+  remEl.innerText='TERMINÉ';bloc.classList.add('hb-done');
+  if(state.lastPhase==='running'&&!state.notified){state.notified=true;playEndSound();bloc.classList.add('hb-ended-flash');setTimeout(()=>bloc.classList.remove('hb-ended-flash'),4000);if(!isLast)firstVisibleResult.collectMsg=`📋 Ramassez la ${copieOrdinal(part.copieNum)} copie — ${part.name} terminée`}
+  state.lastPhase='done';
+ }else{
+  const h=Math.floor(remMin/60),m=String(remMin%60).padStart(2,'0');remEl.innerText=h>0?`${h}h${m}`:`${remMin} min`;
+  if(isActive){if(remMin<10)bloc.classList.add('hb-danger');else if(remMin<30)bloc.classList.add('hb-warn')}
+  state.lastPhase='running';state.notified=false;
+ }
+ partRuntimeState[sk]=state;
+ const meta=bloc.querySelector('.hb-part-meta');if(meta)meta.querySelectorAll('.hb-badge').forEach(b=>b.classList.toggle('active-part',isActive&&pt.remaining>0));
+}
+function update(){
+ const now=getNow(),dateEl=document.getElementById('current-date'),timeEl=document.getElementById('current-time');
+ if(dateEl)dateEl.innerText=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+ const showSec=document.getElementById('opt-secondes')?.checked!==false;if(timeEl)timeEl.innerText=showSec?now.toLocaleTimeString('fr-FR'):now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+ const firstVisibleResult={seen:false,remMin:null,collectMsg:null};
+ exams.forEach(exam=>{
+  if(!exam.visible)return;
+  if(examHasParts(exam)){
+   const timings=getExamPartsTiming(exam,now),displayIdx=getDisplayPartIndex(timings,now),part=exam.parts[displayIdx];
+   if(part&&part.visible!==false&&!document.getElementById('hb-'+exam.id+'-'+part.id)){setTimeout(renderExams,0);return}
+   if(part&&part.visible!==false)updatePartTimer(exam,part,displayIdx,timings,displayIdx,firstVisibleResult);
+  }else{
+   const bloc=document.getElementById('hb-'+exam.id),remEl=document.getElementById('hb-rem-'+exam.id),bar=document.getElementById('hb-bar-'+exam.id),endEl=document.getElementById('end-'+exam.id),labelEl=bloc?.querySelector('.hb-rem-label');
+   if(!bloc||!remEl||!bar)return;bloc.classList.remove('hb-warn','hb-danger','hb-done');
+   const timing=getExamTiming(exam,now);if(!timing){remEl.innerText='—';bar.style.width='100%';return}
+   if(endEl)endEl.value=timing.endValue;
+   const state=examRuntimeState[exam.id]||{lastPhase:null,notified:false};
+   if(timing.start>now){if(labelEl)labelEl.innerText='Début dans';remEl.innerText=formatMsShort(timing.start-now);bar.style.width='100%';state.lastPhase='waiting';state.notified=false;examRuntimeState[exam.id]=state;return}
+   if(labelEl)labelEl.innerText='Temps restant';bar.style.width=Math.max(0,Math.min(100,(timing.remaining/timing.total)*100))+'%';
+   const remMin=Math.floor(timing.remaining/60000),isMuted=exam.muted===true;if(!isMuted&&!firstVisibleResult.seen)firstVisibleResult.seen=true,firstVisibleResult.remMin=remMin;
+   if(timing.remaining<=0){remEl.innerText='TERMINÉ';bloc.classList.add('hb-done');if(!isMuted&&state.lastPhase==='running'&&!state.notified){state.notified=true;playEndSound();bloc.classList.add('hb-ended-flash');setTimeout(()=>bloc.classList.remove('hb-ended-flash'),4000)}state.lastPhase='done'}
+   else{remEl.innerText=formatMsShort(timing.remaining);if(!isMuted){if(remMin<10)bloc.classList.add('hb-danger');else if(remMin<30)bloc.classList.add('hb-warn')}state.lastPhase='running';state.notified=false}
+   examRuntimeState[exam.id]=state;
+  }
+ });
+ const app=document.getElementById('app'),bnr=document.getElementById('alert-banner');if(app)app.classList.remove('alert-warning','alert-danger','alert-done');if(bnr)bnr.innerText='';
+ if(firstVisibleResult.seen&&app&&bnr){
+  if(firstVisibleResult.collectMsg){app.classList.add('alert-warning');bnr.innerText=firstVisibleResult.collectMsg}
+  else if(firstVisibleResult.remMin<=0)app.classList.add('alert-done');
+  else if(firstVisibleResult.remMin<10){app.classList.add('alert-danger');bnr.innerText='Moins de 10 minutes restantes - vérifiez en-tête et pagination'}
+  else if(firstVisibleResult.remMin<30){app.classList.add('alert-warning');bnr.innerText='Moins de 30 minutes restantes'}
+ }
+ syncCopyExamFields(now);
+}
+function unlockAudio(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume()}catch(e){}}
+function getAudioCtx(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function playTone(ctx,freq,start,duration,gainValue){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,start);gain.gain.setValueAtTime(gainValue,start);gain.gain.exponentialRampToValueAtTime(0.001,start+duration);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration)}
+function playEndSound(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();const t=ctx.currentTime+0.04;playTone(ctx,880,t,0.16,0.22);playTone(ctx,1175,t+0.22,0.22,0.24)}catch(e){}}
+function testEndSound(){unlockAudio();playEndSound();showToast('🔊 Son de fin testé')}
+function getNow(){return new Date(Date.now()+timeOffset)}
+async function checkInternetTime(){const sources=[{url:'https://timeapi.io/api/time/current/zone?timeZone=UTC',parse:d=>Date.parse(d.dateTime+'Z')},{url:'https://worldtimeapi.org/api/timezone/Etc/UTC',parse:d=>Date.parse(d.utc_datetime)},{url:'https://www.google.com/generate_204',head:true,parse:(d,h)=>Date.parse(h.get('date'))}];for(const src of sources){try{const t0=Date.now();const r=await fetch(src.url,{method:src.head?'HEAD':'GET',cache:'no-store',mode:'cors'});const t1=Date.now();if(!r.ok&&r.status!==204)continue;const serverMs=src.head?src.parse(null,r.headers):src.parse(await r.json());if(!Number.isFinite(serverMs))continue;netTimeDiff=Math.round((serverMs+((t1-t0)/2)-t1)/1000);updateTimeSourceStatus();const alertBtn=document.getElementById('time-alert-btn');if(alertBtn)alertBtn.style.display=Math.abs(netTimeDiff)>=180?'inline-block':'none';if(timeSource==='net')timeOffset=netTimeDiff*1000;return}catch(e){}}netTimeDiff=null;updateTimeSourceStatus()}
+function updateTimeSourceStatus(){
+ const el=document.getElementById('time-source-status');
+ if(!el)return;
+ if(netTimeDiff===null){el.innerHTML="<span style='opacity:.6'>Vérification impossible. L’heure du PC est utilisée.</span>";return}
+ const abs=Math.abs(netTimeDiff),sign=netTimeDiff>0?'retard':'avance';
+ if(abs<60){el.innerHTML=`<span style="color:var(--green-emerald)">Heure du PC synchronisée (écart : ${abs}s)</span>`}
+ else{const min=Math.floor(abs/60),sec=abs%60;el.innerHTML=`<span style="color:var(--warning)">Le PC a <strong>${min}min${sec?sec+'s':''} de ${sign}</strong> par rapport à l’heure internet.</span>`}
+}
+function setTimeSource(src){timeSource=src;if(src==='net'&&netTimeDiff!==null){timeOffset=netTimeDiff*1000;const b=document.getElementById('time-alert-btn');if(b)b.style.display='none'}else timeOffset=0;const rb=document.getElementById('src-'+src);if(rb)rb.checked=true;saveAll()}
+function bindSaveInputs(){document.querySelectorAll('.save-data').forEach(el=>{el.addEventListener('input',()=>{const target=syncMap[el.id];if(target&&document.getElementById(target))document.getElementById(target).value=el.value.toUpperCase();saveAll()})})}
+function saveAll(){const d={theme:document.documentElement.getAttribute('data-theme'),modele:modeleCopie,timeSource,tiersTemps,dnbProfile,dnbDay,exams,pictoLabels};document.querySelectorAll('.save-data').forEach(el=>d[el.id]=el.value);['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes','opt-tiers-temps','opt-show-consignes'].forEach(id=>{const el=document.getElementById(id);if(el)d[id]=el.checked});localStorage.setItem(KEY,JSON.stringify(d))}
+function loadAll(){let raw=localStorage.getItem(KEY);if(!raw)return false;try{const d=JSON.parse(raw);if(d.theme)document.documentElement.setAttribute('data-theme',d.theme);if(d.modele)modeleCopie=d.modele;if(d.timeSource)timeSource=d.timeSource;if(d.tiersTemps!==undefined)tiersTemps=!!d.tiersTemps;if(d.dnbProfile)dnbProfile=d.dnbProfile==='a4'?'a4':'standard';if(d.dnbDay)dnbDay=d.dnbDay==='all'?'all':(DNB_DAY_ORDER.includes(d.dnbDay)?d.dnbDay:'auto');if(d.pictoLabels&&typeof d.pictoLabels==='object')pictoLabels={...DEFAULT_PICTO_LABELS,...d.pictoLabels};if(Array.isArray(d.exams))exams=d.exams.map((e,i)=>normalizeExam(e,i));document.querySelectorAll('.save-data').forEach(el=>{if(d[el.id]!==undefined){el.value=d[el.id];el.dispatchEvent(new Event('input'))}});['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes','opt-tiers-temps','opt-show-consignes'].forEach(id=>{const el=document.getElementById(id);if(el&&d[id]!==undefined)el.checked=d[id]});renderPictoLabels();updateAllPictos();setDnbPresetControls();const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;syncSelectStateFromText('f-academie-select','f-academie');syncSelectStateFromText('f-serie-select','f-serie');clearNoWriteFields();return true}catch(e){return false}}
+function encodeData(obj){
+ try{
+  const json=JSON.stringify(obj);
+  const bytes=new TextEncoder().encode(json);
+  let binary='';
+  bytes.forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
+ }catch(e){console.error('Erreur encodage partage',e);return ''}
+}
+function decodeData(str){
+ const normalized=String(str||'').replace(/-/g,'+').replace(/_/g,'/');
+ const padded=normalized+'='.repeat((4-normalized.length%4)%4);
+ const binary=atob(padded);
+ const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+ return JSON.parse(new TextDecoder().decode(bytes));
+}
+function collectShareConfig(){
+ const fields={};
+ document.querySelectorAll('.save-data').forEach(el=>{fields[el.id]=el.value||''});
+ const options={};
+ ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el)options[id]=el.checked});
+ if(document.getElementById('opt-tiers-temps'))options['opt-tiers-temps']=document.getElementById('opt-tiers-temps').checked;
+ if(document.getElementById('opt-show-consignes'))options['opt-show-consignes']=document.getElementById('opt-show-consignes').checked;
+ return {v:8,exams,modele:modeleCopie,timeSource,tiersTemps,dnbProfile,dnbDay,fields,options,pictoLabels,theme:document.documentElement.getAttribute('data-theme')||'light'};
+}
+function applyShareConfig(cfg){
+ if(!cfg||typeof cfg!=='object')return;
+ if(cfg.theme)document.documentElement.setAttribute('data-theme',cfg.theme);
+ if(cfg.modele)modeleCopie=cfg.modele;
+ if(cfg.timeSource)timeSource=cfg.timeSource;
+ if(cfg.tiersTemps!==undefined)tiersTemps=!!cfg.tiersTemps;
+ if(cfg.dnbProfile)dnbProfile=cfg.dnbProfile==='a4'?'a4':'standard';
+ if(cfg.dnbDay)dnbDay=cfg.dnbDay==='all'?'all':(DNB_DAY_ORDER.includes(cfg.dnbDay)?cfg.dnbDay:'auto');
+ if(cfg.pictoLabels&&typeof cfg.pictoLabels==='object')pictoLabels={...DEFAULT_PICTO_LABELS,...cfg.pictoLabels};
+ if(Array.isArray(cfg.exams))exams=cfg.exams.map((e,i)=>normalizeExam(e,i));
+ if(cfg.fields){
+  Object.entries(cfg.fields).forEach(([id,value])=>{
+   const el=document.getElementById(id);
+   if(el){el.value=value||'';el.dispatchEvent(new Event('input'))}
+  });
+ }
+ if(cfg.options){
+  Object.entries(cfg.options).forEach(([id,value])=>{
+   const el=document.getElementById(id);
+   if(el)el.checked=Boolean(value);
+  });
+ }
+ renderPictoLabels();updateAllPictos();
+ setDnbPresetControls();
+ const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;
+ syncSelectStateFromText('f-academie-select','f-academie');
+ syncSelectStateFromText('f-serie-select','f-serie');
+ clearNoWriteFields();
+}
+function buildShareURL(){
+ const base=window.location.origin+window.location.pathname;
+ const cfg=encodeData(collectShareConfig());
+ return base+(cfg?('?cfg='+cfg):'');
+}
+function loadFromURL(){
+ const params=new URLSearchParams(window.location.search);
+ if(params.has('cfg')){
+  try{applyShareConfig(decodeData(params.get('cfg')));saveAll();return}
+  catch(e){console.error('Erreur chargement cfg',e);showToast('Lien de partage invalide')}
+ }
+ // Compatibilité avec les anciens liens de test contenant ?exams=...
+ if(params.has('exams')){
+  try{
+   const legacy={exams:decodeData(params.get('exams')),modele:params.get('modele')||modeleCopie,fields:{},options:{}};
+   document.querySelectorAll('.save-data').forEach(el=>{if(params.has(el.id))legacy.fields[el.id]=params.get(el.id)});
+   ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{if(params.has(id))legacy.options[id]=params.get(id)==='1'});
+   applyShareConfig(legacy);saveAll();
+  }catch(e){console.error('Erreur chargement ancien lien',e)}
+ }
+}
+function shareURL(){const url=buildShareURL();document.getElementById('share-url-input').value=url;const examPreview=exams.map(e=>{const parts=examHasParts(e)?e.parts.map(p=>`<div class="share-field-row"><span class="share-field-key">${safeText(p.name)}</span><span class="share-field-val">${safeText(formatDurationWithTT(p))} — calc. ${p.calculator?'oui':'non'} — ${safeText(copieOrdinal(p.copieNum)+' copie')}</span></div>`).join(''):`<div class="share-field-row"><span class="share-field-key">${safeText(e.name)}</span><span class="share-field-val">${safeText(e.start)} — durée ${safeText(e.duration)} ${e.visible?'':'(masquée)'}</span></div>`;return parts}).join('');const pictoPreview=PICTO_KEYS.map(k=>{const cb=document.getElementById('opt-'+k);return `<div class="share-field-row"><span class="share-field-key">Interdiction</span><span class="share-field-val">${safeText(getPictoLabel(k))} ${cb&&cb.checked?'':'(masquée)'}</span></div>`}).join('');document.getElementById('share-fields-preview').innerHTML=examPreview+pictoPreview;document.getElementById('shareModal').classList.add('open')}
+function copyShareURL(){const input=document.getElementById('share-url-input');input.select();navigator.clipboard?.writeText(input.value).then(()=>showToast('✓ URL copiée !')).catch(()=>{document.execCommand('copy');showToast('✓ URL copiée !')})}
+function showToast(msg){const t=document.getElementById('share-toast');if(!t)return;t.innerText=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function setModeleCopie(m,doSave=true){modeleCopie=['aucun','en','ccyc'].includes(m)?m:'en';const isEN=modeleCopie==='en',isCCYC=modeleCopie==='ccyc';const haut=document.querySelector('.copie-haut'),sep=document.getElementById('sep-tirets'),bas=document.querySelector('.copie-bas'),ccyc=document.getElementById('ccyc-bloc');if(haut)haut.style.display=isEN?'':'none';if(sep)sep.style.display=isEN?'':'none';if(bas)bas.style.display=isEN?'':'none';if(ccyc)ccyc.classList.toggle('active',isCCYC);const rb=document.getElementById('modele-'+modeleCopie);if(rb)rb.checked=true;if(doSave)saveAll()}
+function togglePicto(id,show){const el=document.getElementById(id);if(el)el.classList.toggle('active',show);saveAll()}
+function toggleTheme(){const r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'light':'dark');saveAll()}
+function adjustZoom(delta){zoomLevel=Math.min(150,Math.max(60,zoomLevel+delta));document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%';localStorage.setItem('copieEx_zoom',zoomLevel)}
+function loadZoom(){const saved=parseInt(localStorage.getItem('copieEx_zoom'));if(saved&&saved>=60&&saved<=150){zoomLevel=saved;document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%'}}
+function toggleFullScreen(){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}
+function openSettings(section){document.getElementById('settingsModal').classList.add('open');if(section==='source')setTimeout(()=>document.getElementById('section-source')?.scrollIntoView({behavior:'smooth',block:'center'}),80)}
+function openInfo(){document.getElementById('infoModal').classList.add('open')}
+function closeModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'))}
+window.addEventListener('click',e=>{if(e.target.classList.contains('modal'))closeModals()});window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
+function onAcademieChange(sel){selectOrOther(sel,'f-academie')}function onSerieChange(sel){selectOrOther(sel,'f-serie')}function onAcademieBlur(txt){otherBlur(txt,'f-academie-select')}function onSerieBlur(txt){otherBlur(txt,'f-serie-select')}
+function selectOrOther(sel,textId){const txt=document.getElementById(textId);if(sel.value==='__autre__'){sel.style.display='none';txt.style.display='';txt.value='';txt.focus()}else{txt.style.display='none';sel.style.display='';txt.value=sel.value}txt.dispatchEvent(new Event('input'));saveAll()}
+function otherBlur(txt,selectId){if(txt.value.trim()===''){const sel=document.getElementById(selectId);sel.value='';sel.style.display='';txt.style.display='none';txt.value='';txt.dispatchEvent(new Event('input'));saveAll()}}
+function syncSelectStateFromText(selectId,textId){const sel=document.getElementById(selectId),txt=document.getElementById(textId);if(!sel||!txt)return;const val=txt.value;const opt=[...sel.options].find(o=>(o.value||o.text)===val);if(opt&&opt.value!=='__autre__'){sel.value=opt.value||opt.text;sel.style.display='';txt.style.display='none'}else if(val){sel.value='__autre__';sel.style.display='none';txt.style.display=''}}
+</script>
+</body>
+</html>
