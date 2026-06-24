@@ -1,61 +1,25 @@
-<!DOCTYPE html>
-<html lang="fr" data-theme="light">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Copie-Examen : affichage et chronomètre d'examen</title>
-<meta name="description" content="Affichage vidéoprojecteur pour examens : horloge, épreuves dynamiques, consignes et modèle de copie.">
-<style>
-:root{
-  --blue-france:#000091;--blue-cumulus:#e8edff;--red-marianne:#e1000f;
-  --grey-850:#3a3a3a;--grey-200:#eee;--grey-50:#f6f6f6;--white:#fff;
-  --warning:#b34000;--warning-bg:#fff3e0;--danger:#ce0500;--danger-bg:#ffe8e6;
-  --green-emerald:#008941;--bg:var(--grey-50);--surface:var(--white);--text:var(--grey-850);
-  --title:#161616;--border:#161616;--accent:var(--blue-france);
-  --field-color:#0055cc;--field-border:#0055cc;--font:'Marianne','Segoe UI',Arial,sans-serif;color-scheme:light;
-}
-:root[data-theme="dark"]{
-  --bg:#161616;--surface:#1e1e1e;--text:#e0e0e0;--title:#fff;--border:#444;
-  --accent:#8585ff;--blue-france:#8585ff;--blue-cumulus:#1e1e3a;
-  --green-emerald:#4cca7e;--warning:#ffaa44;--warning-bg:#2a1a00;--danger:#ff5555;
-  --danger-bg:#2a0a0a;--grey-200:#2c2c2c;--field-color:#7aacff;--field-border:#7aacff;color-scheme:dark;
-}
-*,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100vh;background:var(--bg);color:var(--text);font-family:var(--font)}
-.main-screen{display:flex;flex-direction:column;min-height:100vh;height:100vh;overflow-y:auto;padding:6px 28px 4px}
-header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
-.header-top{display:flex;align-items:center;justify-content:center;gap:20px}
-.clock-block{text-align:left;flex-shrink:0;border-right:2px solid var(--border);padding-right:28px;margin-right:4px;width:188px}
-#current-date{font-size:.72rem;text-transform:uppercase;font-weight:700;color:var(--accent);letter-spacing:.06em;white-space:nowrap;min-width:6.5ch}
-#current-time{font-size:2.8rem;font-weight:800;color:var(--title);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:6.5ch;display:inline-block;padding-right:16px}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.alert-warning{background:var(--warning-bg)!important}.alert-danger{background:var(--danger-bg)!important}
-.pictos-bar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;flex:1}
-.picto{display:none;flex-direction:column;align-items:center;text-align:center;background:#fff0f0;border:2px solid #ff4b4b;border-radius:6px;padding:6px 10px;width:100px;min-height:74px;justify-content:center;flex-shrink:0;cursor:pointer}
-.picto.active{display:flex}.picto:hover{opacity:.85}
-.picto svg{width:32px;height:32px;fill:none;stroke:#cc0000;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:4px;flex-shrink:0}
-.picto-label{font-size:.5rem;font-weight:800;text-transform:uppercase;color:#cc0000;line-height:1.15;letter-spacing:.02em;min-height:2.4em;display:block;text-align:center;padding:4px 2px 1px;border-radius:3px;border:1px dashed transparent;cursor:text;outline:none;min-width:60px;word-break:break-word;white-space:normal}
-.picto-label:hover{border-color:#cc0000;background:rgba(255,255,255,.5)}
-.picto-label:focus{border-color:#cc0000;border-style:solid;background:#fff;cursor:text}
-:root[data-theme="dark"] .picto-label:hover{border-color:#ff8888;background:rgba(0,0,0,.3)}
-:root[data-theme="dark"] .picto-label:focus{background:#1a1a1a;border-color:#ff8888}
-:root[data-theme="dark"] .picto{background:#2a1515;border-color:#cc4444}:root[data-theme="dark"] .picto svg{stroke:#ff8888}:root[data-theme="dark"] .picto-label{color:#ff8888}
-.hb-spacer{flex:1;min-height:4px}.exam-blocs{display:flex;flex-direction:column;gap:0;flex:0 0 auto}.hb-row{display:flex;flex-direction:column;flex:0 0 auto}.hb-row .hb-spacer{flex:0 0 12px;min-height:12px}
-.horaire-bloc{display:flex;flex-direction:row;align-items:center;border:2px solid var(--border);border-radius:4px;overflow:hidden;background:var(--surface);width:100%;box-sizing:border-box}
-.horaire-bloc.dynamic-exam .hb-title{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:normal;flex-shrink:0;width:150px;min-width:120px;line-height:1.25;padding-right:4px;text-align:left;color:var(--exam-color,var(--accent))}
 .hb-body{flex:1;display:flex;flex-direction:column;padding:3px 8px;min-width:0}.hb-timing-row{display:flex;align-items:center;gap:5px}
 .time-field-wrap{display:flex;align-items:center;gap:4px;background:var(--surface);border:2px solid var(--border);border-radius:4px;padding:2px 6px;transition:border-color .2s;position:relative;flex-shrink:1;min-width:0}.time-field-wrap:focus-within{border-color:var(--accent);outline:2px solid #0000911a}.time-field-wrap.readonly{opacity:.65;background:var(--grey-200)}
 .time-label-chip{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);white-space:nowrap}.time-field-wrap .time-input{background:transparent;border:none;color:var(--title);font-family:var(--font);font-size:1.55rem;font-weight:800;outline:none;width:6ch;text-align:center}.time-icon{width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;flex-shrink:0;pointer-events:none;opacity:.75}
 .hb-progress{width:100%;height:5px;background:var(--grey-200);border-radius:2px;overflow:hidden;margin-top:3px}.hb-bar{height:100%;width:100%;border-radius:2px;transition:width 1s linear,background .5s;background:var(--exam-color,var(--accent))}
 .hb-remaining{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 6px;border-left:2px solid var(--border);min-width:60px;text-align:center}.hb-rem-label{font-size:.48rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text);opacity:.65;white-space:nowrap}.hb-rem-value{font-size:1.9rem;font-weight:800;line-height:1;white-space:nowrap;color:var(--exam-color,var(--accent))}
+.horaire-bloc.featured-part{min-height:150px}.horaire-bloc.featured-part .hb-body{padding:12px 16px}.horaire-bloc.featured-part .hb-timing-row{gap:12px}.horaire-bloc.featured-part .hb-title{font-size:1.7rem;width:300px;min-width:240px;line-height:1.15}.horaire-bloc.featured-part .time-label-chip{font-size:1rem}.horaire-bloc.featured-part .time-field-wrap{padding:8px 12px;border-width:3px}.horaire-bloc.featured-part .time-field-wrap .time-input{font-size:3.1rem;width:5.8ch}.horaire-bloc.featured-part .hb-progress{height:12px;margin-top:12px}.horaire-bloc.featured-part .hb-remaining{min-width:145px;padding:10px 14px}.horaire-bloc.featured-part .hb-rem-label{font-size:.8rem}.horaire-bloc.featured-part .hb-rem-value{font-size:3.8rem}.horaire-bloc.featured-part .hb-part-meta{font-size:.86rem;gap:10px;margin-top:10px}.horaire-bloc.featured-part .hb-badge{padding:5px 10px;border-width:2px}
 .hb-warn .hb-bar{background:var(--warning)!important}.hb-warn .hb-rem-value{color:var(--warning)!important}.hb-danger .hb-bar{background:var(--danger)!important}.hb-danger .hb-rem-value{color:var(--danger)!important;animation:pulse 1.2s ease-in-out infinite}.hb-done .hb-rem-value{color:var(--green-emerald)!important}.hb-done .hb-bar{width:0!important}.hb-ended-flash{animation:pulse 1.2s ease-in-out 3}
-.copie-cadre{display:flex;flex-direction:row;border:2px solid var(--border);border-radius:2px;background:var(--surface);flex-shrink:0}.copie-haut{flex:0 0 auto;margin-bottom:3px}.copie-bas{margin-bottom:50px}.cadre-label-vert{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-size:.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--title);padding:4px 3px;border-right:2px solid var(--border);display:flex;align-items:center;justify-content:center;white-space:nowrap;background:var(--bg);flex-shrink:0;min-width:18px}.cadre-content{flex:1;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-start;gap:0;min-height:0}.cadre-content .line{min-height:32px;align-items:center}.cadre-note{flex-shrink:0;width:120px;border-left:2px solid var(--border);padding:5px 7px;font-size:.58rem;font-style:italic;color:var(--text);line-height:1.4;display:flex;align-items:flex-start}.copie-header-tag{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--title);margin-bottom:2px;border-bottom:1px solid var(--blue-cumulus);padding-bottom:2px}.line{display:flex;align-items:flex-end;gap:10px;width:100%}.line-half{flex:0 0 50%;display:flex;align-items:flex-end;gap:8px}.label{font-weight:700;font-size:.78rem;white-space:nowrap;color:var(--title);text-transform:uppercase;letter-spacing:.03em}.field{flex:1;border:none;border-bottom:2px solid var(--field-border);background:transparent;color:var(--field-color);font-family:var(--font);font-size:1.3rem;font-weight:800;outline:none;padding:0 3px 1px;text-transform:uppercase;transition:border-color .2s;min-width:0}.field:focus{border-bottom-color:var(--red-marianne)}select.field{height:34px;font-size:1.3rem;cursor:pointer}.field[readonly]{color:var(--field-color);opacity:1}.cadre{border:2px solid var(--field-border)!important;border-bottom:2px solid var(--field-border)!important}.sublabel{font-size:.55rem;font-style:italic;font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;white-space:nowrap}
+.hb-part-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;font-size:.52rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.hb-badge{padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--bg)}.hb-badge.calc-no{color:var(--danger);border-color:var(--danger);background:var(--danger-bg)}.hb-badge.calc-yes{color:var(--green-emerald);border-color:var(--green-emerald);background:#e8f5e9}:root[data-theme="dark"] .hb-badge.calc-yes{background:#0a2a14}.hb-badge.copie{color:var(--accent);border-color:var(--accent)}.hb-badge.active-part{outline:2px solid var(--accent);outline-offset:1px}
+.consignes-bloc{border:2px solid var(--border);border-radius:4px;background:var(--surface);margin-bottom:8px;overflow:hidden}.consignes-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 10px;border-bottom:2px solid var(--border);background:var(--blue-cumulus)}.consignes-title{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--title)}.consignes-badge{font-size:.55rem;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:#00bcd4;color:#fff;letter-spacing:.06em}.consignes-notes{padding:5px 10px;font-size:.58rem;line-height:1.5;border-bottom:1px solid var(--border)}.consignes-notes p{margin:2px 0}.consignes-notes .hl{background:#fff59d;color:#161616;padding:0 3px;border-radius:2px;font-weight:700}:root[data-theme="dark"] .consignes-notes .hl{background:#5c4d00;color:#fff}
+.consignes-table{width:100%;border-collapse:collapse;font-size:.58rem}.consignes-table th,.consignes-table td{border:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}.consignes-table th{background:var(--bg);font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--title)}.consignes-table td.crit{font-weight:700;white-space:nowrap;background:var(--bg);width:110px}.consignes-table .calc-no{color:var(--danger);font-weight:800}.consignes-table .calc-yes{color:var(--green-emerald);font-weight:800}
+.exam-settings-block{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--border)}.exam-settings-block:last-child{border-bottom:none}.exam-parts-panel{margin:8px 0 0 34px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px}.part-settings-row{display:grid;grid-template-columns:24px minmax(120px,1fr) 72px 72px 22px 52px 1fr 28px;gap:6px;align-items:center;margin-bottom:6px;font-size:.72rem}.part-settings-row input[type="text"],.part-settings-row .time-input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:5px 6px;font-family:var(--font);font-size:.75rem;font-weight:700;outline:none}.part-settings-row input:focus{border-color:var(--accent)}.part-settings-head{display:grid;grid-template-columns:24px minmax(120px,1fr) 72px 72px 22px 52px 1fr 28px;gap:6px;font-size:.62rem;font-weight:800;text-transform:uppercase;opacity:.65;margin-bottom:4px}.exam-notes-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}.exam-notes-row input{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-family:var(--font);font-size:.75rem;outline:none}
+.copie-cadre{display:flex;flex-direction:row;border:2px solid var(--border);border-radius:2px;background:var(--surface);flex-shrink:0}.copie-haut{flex:0 0 auto;margin-bottom:3px;position:relative}.copie-bas{margin-bottom:50px}.cadre-label-vert{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-size:.5rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--title);padding:4px 3px;border-right:2px solid var(--border);display:flex;align-items:center;justify-content:center;white-space:nowrap;background:var(--bg);flex-shrink:0;min-width:18px}.cadre-content{flex:1;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-start;gap:0;min-height:0}.cadre-content .line{min-height:32px;align-items:center}.cadre-note{flex-shrink:0;width:120px;border-left:2px solid var(--border);padding:5px 7px;font-size:.58rem;font-style:italic;color:var(--text);line-height:1.4;display:flex;align-items:flex-start}.copie-header-tag{font-size:.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--title);margin-bottom:2px;border-bottom:1px solid var(--blue-cumulus);padding-bottom:2px}.line{display:flex;align-items:flex-end;gap:10px;width:100%}.line-half{flex:0 0 50%;display:flex;align-items:flex-end;gap:8px}.label{font-weight:700;font-size:.78rem;white-space:nowrap;color:var(--title);text-transform:uppercase;letter-spacing:.03em}.field{flex:1;border:none;border-bottom:2px solid var(--field-border);background:transparent;color:var(--field-color);font-family:var(--font);font-size:1.3rem;font-weight:800;outline:none;padding:0 3px 1px;text-transform:uppercase;transition:border-color .2s;min-width:0}.field:focus{border-bottom-color:var(--red-marianne)}select.field{height:34px;font-size:1.3rem;cursor:pointer}.field[readonly]{color:var(--field-color);opacity:1}.cadre{border:2px solid var(--field-border)!important;border-bottom:2px solid var(--field-border)!important}.sublabel{font-size:.55rem;font-style:italic;font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;white-space:nowrap}
 .ccyc-wrapper{display:none;flex-direction:column;flex-shrink:0;margin-bottom:50px;border:2px solid var(--border);background:var(--surface);font-family:var(--font)}.ccyc-wrapper.active{display:flex}.ccyc-title{font-size:.8rem;font-weight:800;text-transform:uppercase;padding:6px 10px;border-bottom:2px solid var(--border);color:var(--title)}.ccyc-info{border-bottom:2px solid var(--border);padding:4px 12px;display:flex;flex-direction:column;gap:3px}.ccyc-info-line{display:flex;align-items:flex-end;gap:8px}.ccyc-info-label{font-size:.88rem;font-weight:800;color:var(--title);white-space:nowrap;flex-shrink:0}.ccyc-info-field{flex:1;border:none;border-bottom:1.5px dotted var(--field-border);background:transparent;color:var(--field-color);font-family:var(--font);font-size:1.1rem;font-weight:800;outline:none;padding:0 3px 1px;text-transform:uppercase;min-width:0}.ccyc-consignes{display:flex;min-height:56px}.ccyc-consignes-left{flex:1;padding:5px 10px;border-right:2px solid var(--border);display:flex;gap:8px}.ccyc-consignes-title{font-size:.58rem;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--title);flex-shrink:0;padding-top:1px}.ccyc-consignes-list{font-size:.51rem;font-style:italic;color:var(--text);line-height:1.65;list-style:none;padding:0;margin:0}.ccyc-consignes-list li::before{content:"• "}.ccyc-consignes-right{flex-shrink:0;width:200px;padding:6px 12px;display:flex;flex-direction:column;justify-content:center}
 .admin-tools{position:fixed;bottom:12px;right:20px;display:flex;gap:6px;z-index:100}.zoom-tools{position:fixed;bottom:12px;left:20px;display:flex;gap:4px;z-index:100;align-items:center}.zoom-tools .btn{font-size:1rem;font-weight:900;padding:4px 11px;min-width:32px;text-align:center}.zoom-label{font-size:.65rem;font-weight:700;color:var(--accent);letter-spacing:.04em;opacity:.8;min-width:36px;text-align:center}.btn{background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:7px 11px;cursor:pointer;border-radius:4px;font-family:var(--font);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:background .15s,color .15s}.btn:hover{background:var(--accent);color:var(--bg)}.btn-small{padding:6px 10px;font-size:.68rem}
 .modal{display:none;position:fixed;z-index:200;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);align-items:center;justify-content:center}.modal.open{display:flex}.modal-content{background:var(--surface);padding:24px 28px;border-left:6px solid var(--accent);width:min(720px,92vw);max-height:90vh;overflow-y:auto;border-radius:4px;position:relative}.modal-content h2{margin:0 0 16px;font-size:1.2rem;color:var(--title);text-transform:uppercase;letter-spacing:.06em}.close-btn{position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text);line-height:1}.settings-section{margin-bottom:18px}.settings-section-title{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);border-bottom:1px solid var(--blue-cumulus);padding-bottom:5px;margin-bottom:10px}.picto-opt{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-weight:600;font-size:.9rem}.picto-opt input[type="checkbox"],.picto-opt input[type="radio"]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}.exam-settings-row{display:grid;grid-template-columns:26px minmax(150px,1fr) 92px 92px 34px;gap:8px;align-items:center;margin-bottom:8px}.exam-settings-row input[type="text"],.exam-settings-row .time-input{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-family:var(--font);font-size:.82rem;font-weight:700;outline:none}.exam-settings-row input:focus{border-color:var(--accent)}.exam-delete-btn{border:1px solid var(--danger);background:transparent;color:var(--danger);border-radius:4px;cursor:pointer;font-weight:900;height:30px;line-height:1}.exam-delete-btn:hover{background:var(--danger);color:#fff}.exam-settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.settings-help{font-size:.72rem;line-height:1.45;opacity:.72;margin:8px 0 0}.picto-edit-row{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:center;margin-bottom:8px}.picto-edit-row input[type="text"]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-family:var(--font);font-size:.82rem;font-weight:700;outline:none}.picto-edit-row input[type="text"]:focus{border-color:var(--accent)}
+.dnb-preset-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.dnb-preset-field{display:flex;flex-direction:column;gap:4px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.dnb-preset-field select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:7px 8px;font-family:var(--font);font-size:.82rem;font-weight:700;outline:none;text-transform:none;letter-spacing:0}
+.dnb-preset-field select:focus{border-color:var(--accent)}
 #alert-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;padding:6px 16px;font-weight:800;font-size:.8rem;text-align:center;text-transform:uppercase;letter-spacing:.07em}.alert-warning #alert-banner{display:block;background:var(--warning);color:#fff}.alert-danger #alert-banner{display:block;background:var(--danger);color:#fff;animation:pulse 1.2s ease-in-out infinite}
 #share-toast{position:fixed;bottom:56px;right:20px;background:var(--green-emerald);color:#fff;font-size:.8rem;font-weight:700;padding:8px 18px;border-radius:4px;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}#share-toast.show{opacity:1;transform:translateY(0)}.share-url-box{display:flex;gap:8px;margin:12px 0 6px}.share-url-box input{flex:1;font-size:.78rem;padding:8px 10px;border:2px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none}.btn-copy{background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}.share-hint{font-size:.78rem;color:var(--text);opacity:.7;margin:0 0 18px;line-height:1.5}.share-fields-list{font-size:.8rem;line-height:1.8;background:var(--bg);border-radius:4px;padding:10px 14px;border:1px solid var(--border);margin-bottom:4px}.share-field-row{display:flex;gap:8px;align-items:baseline}.share-field-key{font-weight:700;color:var(--accent);min-width:160px}.share-field-val{color:var(--text);opacity:.85;font-style:italic}
-@media(max-width:800px){.time-label-chip,.time-icon{display:none}.time-field-wrap .time-input{font-size:1.2rem;width:5.5ch}.horaire-bloc.dynamic-exam .hb-title{font-size:.72rem;width:110px;min-width:90px}.hb-rem-value{font-size:1.4rem}.exam-settings-row{grid-template-columns:26px 1fr 80px 80px 34px}}
+@media(max-width:800px){.time-label-chip,.time-icon{display:none}.time-field-wrap .time-input{font-size:1.2rem;width:5.5ch}.horaire-bloc.dynamic-exam .hb-title{font-size:.72rem;width:110px;min-width:90px}.hb-rem-value{font-size:1.4rem}.exam-settings-row{grid-template-columns:26px 1fr 80px 80px 34px}.part-settings-row,.part-settings-head{grid-template-columns:1fr 1fr;gap:4px}.part-settings-head span:nth-child(n+3),.part-settings-row>*:nth-child(n+3){grid-column:1/-1}.consignes-table{font-size:.5rem}.consignes-table td.crit{width:auto}.dnb-preset-grid{grid-template-columns:1fr}.dnb-context{font-size:.52rem}}
 </style>
 </head>
 <body>
@@ -70,15 +34,16 @@ header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
       </div>
     </div>
     <div class="pictos-bar">
-      <div class="picto active" id="p-tel" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="9" y1="5.5" x2="15" y2="5.5"/><circle cx="12" cy="18.5" r="1" fill="#cc0000"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-tel-label" contenteditable="true" spellcheck="false" data-key="tel" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'tel')" title="Cliquer pour modifier le nom">Smartphone</span></div>
+      <div class="picto active" id="p-tel" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="9" y1="5.5" x2="15" y2="5.5"/><circle cx="12" cy="18.5" r="1" fill="#cc0000"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-tel-label" contenteditable="true" spellcheck="false" data-key="tel" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'tel')" title="Cliquer pour modifier le nom">Téléphone éteint</span></div>
       <div class="picto active" id="p-watch" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><rect x="9.5" y="2" width="5" height="5" rx="1"/><rect x="9.5" y="17" width="5" height="5" rx="1"/><polyline points="12 9.5 12 12 13.5 13.5"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-watch-label" contenteditable="true" spellcheck="false" data-key="watch" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'watch')" title="Cliquer pour modifier le nom">Montre connectée</span></div>
-      <div class="picto active" id="p-exit" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><path d="M9 10 Q8 15 9 19"/><path d="M15 10 Q16 15 15 19"/><path d="M9 13 h6"/><path d="M7 19 h10"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-exit-label" contenteditable="true" spellcheck="false" data-key="exit" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'exit')" title="Cliquer pour modifier le nom">Sortie avant 1h</span></div>
-      <div class="picto active" id="p-bag" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><path d="M8 8 C8 5 10 3 12 3 C14 3 16 5 16 8"/><rect x="4" y="8" width="16" height="13" rx="2"/><line x1="4" y1="13" x2="20" y2="13"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-bag-label" contenteditable="true" spellcheck="false" data-key="bag" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'bag')" title="Cliquer pour modifier le nom">Sacs près des tables</span></div>
-      <div class="picto active" id="p-noise" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><path d="M4 4 h10 a2 2 0 0 1 2 2 v4 a2 2 0 0 1 -2 2 H8 l-3 3 v-3 H4 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 z"/><path d="M14 10 h4 a2 2 0 0 1 2 2 v3 a2 2 0 0 1 -2 2 h-1 v2 l-2.5 -2 H14 a2 2 0 0 1 -2 -2 v-1"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-noise-label" contenteditable="true" spellcheck="false" data-key="noise" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'noise')" title="Cliquer pour modifier le nom">Bavardage</span></div>
+      <div class="picto active" id="p-exit" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><path d="M9 10 Q8 15 9 19"/><path d="M15 10 Q16 15 15 19"/><path d="M9 13 h6"/><path d="M7 19 h10"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-exit-label" contenteditable="true" spellcheck="false" data-key="exit" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'exit')" title="Cliquer pour modifier le nom">Sortie interdite</span></div>
+      <div class="picto active" id="p-bag" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><path d="M8 8 C8 5 10 3 12 3 C14 3 16 5 16 8"/><rect x="4" y="8" width="16" height="13" rx="2"/><line x1="4" y1="13" x2="20" y2="13"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-bag-label" contenteditable="true" spellcheck="false" data-key="bag" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'bag')" title="Cliquer pour modifier le nom">Sacs hors de portée</span></div>
+      <div class="picto active" id="p-noise" onclick="onPictoClick(event)" title="Cliquer sur le nom pour le modifier, ou sur l'icône pour ouvrir les Réglages"><svg viewBox="0 0 24 24"><path d="M4 4 h10 a2 2 0 0 1 2 2 v4 a2 2 0 0 1 -2 2 H8 l-3 3 v-3 H4 a2 2 0 0 1 -2 -2 V6 a2 2 0 0 1 2 -2 z"/><path d="M14 10 h4 a2 2 0 0 1 2 2 v3 a2 2 0 0 1 -2 2 h-1 v2 l-2.5 -2 H14 a2 2 0 0 1 -2 -2 v-1"/><line x1="2" y1="2" x2="22" y2="22" stroke="#cc0000" stroke-width="2.2"/></svg><span class="picto-label" id="p-noise-label" contenteditable="true" spellcheck="false" data-key="noise" onclick="event.stopPropagation()" onkeydown="onPictoLabelKey(event)" onblur="onPictoLabelBlur(event,'noise')" title="Cliquer pour modifier le nom">Silence</span></div>
     </div>
   </div>
 </header>
 
+<div id="consignes-blocs"></div>
 <div id="exam-blocs" class="exam-blocs"></div>
 <div class="hb-spacer"></div>
 
@@ -129,17 +94,18 @@ header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
 
 <div id="alert-banner"></div>
 <div class="zoom-tools"><button class="btn" onclick="adjustZoom(-10)" title="Zoom arrière">－</button><span class="zoom-label" id="zoom-label">100%</span><button class="btn" onclick="adjustZoom(10)" title="Zoom avant">＋</button></div>
-<div class="admin-tools"><button class="btn" onclick="openSettings()">⚙️ Paramètres</button><button class="btn" onclick="toggleTheme()">🌓 Thème</button><button class="btn" onclick="toggleFullScreen()">🖥️ Plein écran</button><button class="btn" onclick="shareURL()">🔗 Partager</button><button class="btn" onclick="openInfo()">?</button></div>
+<div class="admin-tools"><button class="btn" onclick="openSettings()">⚙️ Paramètres</button><button class="btn" onclick="toggleTheme()">🌓 Mode sombre</button><button class="btn" onclick="toggleFullScreen()">🖥️ Plein écran</button><button class="btn" onclick="shareURL()">🔗 Partager</button><button class="btn" onclick="openInfo()">?</button></div>
 
 <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-label="Paramètres"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>Réglages</h2>
+  <div class="settings-section"><div class="settings-section-title">DNB 2026 — profils officiels</div><div class="dnb-preset-grid"><label class="dnb-preset-field" for="dnb-profile-select">Profil salle<select id="dnb-profile-select" onchange="setDnbPresetProfile(this.value)"><option value="standard">Salles ordinaires</option><option value="a4">Salle A4 — aménagement 1/3 temps</option></select></label><label class="dnb-preset-field" for="dnb-day-select">Affichage par défaut<select id="dnb-day-select" onchange="setDnbPresetDay(this.value)"><option value="auto">Jour automatique</option><option value="all">Toutes les épreuves</option><option value="2026-06-26">Vendredi 26 juin — Français</option><option value="2026-06-29">Lundi 29 juin — HG-EMC / Sciences</option><option value="2026-06-30">Mardi 30 juin — Mathématiques</option></select></label><button type="button" class="btn btn-small" onclick="applyDnbPresetFromSettings()">Préconfigurer</button></div><div class="exam-settings-actions"><button type="button" class="btn btn-small" onclick="resetDnbPreset('2026-06-26')">Reset 26 juin</button><button type="button" class="btn btn-small" onclick="resetDnbPreset('2026-06-29')">Reset 29 juin</button><button type="button" class="btn btn-small" onclick="resetDnbPreset('2026-06-30')">Reset 30 juin</button><button type="button" class="btn btn-small" onclick="resetDnbPreset('all')">Reset tout</button></div><p class="settings-help">Toutes les épreuves et sous-épreuves sont préconfigurées selon les documents. Les boutons reset réappliquent les horaires officiels par date.</p></div>
   <div class="settings-section"><div class="settings-section-title">📄 Afficher le modèle de copie</div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-aucun" value="aucun" onchange="setModeleCopie('aucun')"><label for="modele-aucun"><strong>Aucun</strong></label></div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-en" value="en" checked onchange="setModeleCopie('en')"><label for="modele-en"><strong>Modèle EN</strong> <span style="font-weight:400;opacity:.7">(Bac, DNB…)</span></label></div><div class="picto-opt"><input type="radio" name="modele-copie" id="modele-ccyc" value="ccyc" onchange="setModeleCopie('ccyc')"><label for="modele-ccyc"><strong>Modèle CCYC</strong> <span style="font-weight:400;opacity:.7">– Santorin (©DNE)</span></label></div></div>
-  <div class="settings-section"><div class="settings-section-title">⏱️ Gestion horaire des épreuves</div><div id="exam-settings-list"></div><div class="exam-settings-actions"><button type="button" class="btn btn-small" onclick="addExamFromSettings()">＋ Ajouter une épreuve</button><button type="button" class="btn btn-small" onclick="testEndSound()">🔊 Tester le son de fin</button></div><p class="settings-help">Chaque épreuve peut être renommée, masquée, supprimée ou ajoutée. Le son de fin est joué une seule fois quand le temps restant passe à zéro. Pour autoriser le son dans le navigateur, cliquez une fois sur “Tester le son de fin” avant l’épreuve.</p></div>
+  <div class="settings-section"><div class="settings-section-title">⏱️ Gestion horaire des épreuves</div><div class="picto-opt"><input type="checkbox" id="opt-tiers-temps" onchange="setTiersTemps(this.checked)"><label for="opt-tiers-temps"><strong>Mode tiers-temps (TT)</strong> <span style="font-weight:400;opacity:.7">— utilise les durées TT de chaque partie</span></label></div><div class="picto-opt"><input type="checkbox" id="opt-show-consignes" checked onchange="saveAll();renderExams()"><label for="opt-show-consignes">Afficher le tableau des consignes spécifiques</label></div><div id="exam-settings-list"></div><div class="exam-settings-actions"><button type="button" class="btn btn-small" onclick="addExamFromSettings()">＋ Ajouter une épreuve</button><button type="button" class="btn btn-small" onclick="testEndSound()">🔊 Tester le son de fin</button></div><p class="settings-help">Activez « Plusieurs parties » pour une épreuve en 2 temps (ex. Maths : automatismes + raisonnement). Chaque partie a sa durée standard et TT, règle calculatrice, n° de copie et consigne de ramassage. Le son de fin retentit à chaque fin de partie.</p></div>
   <div class="settings-section"><div class="settings-section-title">Interdictions</div>
-    <div class="picto-edit-row"><input type="checkbox" id="opt-tel" checked onchange="togglePicto('p-tel',this.checked)"><input type="text" id="label-tel" value="Smartphone" oninput="setPictoLabel('tel',this.value)" aria-label="Nom interdiction smartphone"></div>
+    <div class="picto-edit-row"><input type="checkbox" id="opt-tel" checked onchange="togglePicto('p-tel',this.checked)"><input type="text" id="label-tel" value="Téléphone éteint" oninput="setPictoLabel('tel',this.value)" aria-label="Nom interdiction smartphone"></div>
     <div class="picto-edit-row"><input type="checkbox" id="opt-watch" checked onchange="togglePicto('p-watch',this.checked)"><input type="text" id="label-watch" value="Montre connectée" oninput="setPictoLabel('watch',this.value)" aria-label="Nom interdiction montre connectée"></div>
-    <div class="picto-edit-row"><input type="checkbox" id="opt-exit" checked onchange="togglePicto('p-exit',this.checked)"><input type="text" id="label-exit" value="Sortie avant 1h" oninput="setPictoLabel('exit',this.value)" aria-label="Nom interdiction sortie avant une heure"></div>
-    <div class="picto-edit-row"><input type="checkbox" id="opt-bag" checked onchange="togglePicto('p-bag',this.checked)"><input type="text" id="label-bag" value="Sacs près des tables" oninput="setPictoLabel('bag',this.value)" aria-label="Nom interdiction sacs"></div>
-    <div class="picto-edit-row"><input type="checkbox" id="opt-noise" checked onchange="togglePicto('p-noise',this.checked)"><input type="text" id="label-noise" value="Bavardage" oninput="setPictoLabel('noise',this.value)" aria-label="Nom interdiction bavardage"></div>
+    <div class="picto-edit-row"><input type="checkbox" id="opt-exit" checked onchange="togglePicto('p-exit',this.checked)"><input type="text" id="label-exit" value="Sortie interdite" oninput="setPictoLabel('exit',this.value)" aria-label="Nom interdiction sortie"></div>
+    <div class="picto-edit-row"><input type="checkbox" id="opt-bag" checked onchange="togglePicto('p-bag',this.checked)"><input type="text" id="label-bag" value="Sacs hors de portée" oninput="setPictoLabel('bag',this.value)" aria-label="Nom interdiction sacs"></div>
+    <div class="picto-edit-row"><input type="checkbox" id="opt-noise" checked onchange="togglePicto('p-noise',this.checked)"><input type="text" id="label-noise" value="Silence" oninput="setPictoLabel('noise',this.value)" aria-label="Nom interdiction bavardage"></div>
     <p class="settings-help">Vous pouvez renommer chaque interdiction. Le texte modifié s'affiche aussitôt dans les pictogrammes et sera inclus dans le lien de partage.</p>
   </div>
   <div class="settings-section"><div class="settings-section-title">Options d'affichage</div><div class="picto-opt"><input type="checkbox" id="opt-secondes" checked onchange="saveAll()"><label for="opt-secondes">Afficher les secondes</label></div></div>
@@ -147,218 +113,138 @@ header{flex:0 0 auto;padding-bottom:4px;margin-bottom:4px}
 </div></div>
 
 <div id="shareModal" class="modal" role="dialog" aria-modal="true" aria-label="Partager"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>🔗 Partager cette configuration</h2><p class="share-hint">Cette URL contient les champs pré-remplis, les épreuves ajoutées, leurs noms, horaires et durées.</p><div class="share-url-box"><input type="text" id="share-url-input" readonly onclick="this.select()"><button class="btn-copy" onclick="copyShareURL()">📋 Copier</button></div><p class="share-hint" style="margin-top:4px">Cliquez sur l'URL pour la sélectionner.</p><div class="share-fields-list" id="share-fields-preview"></div></div></div>
-<div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-label="Informations"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>Informations</h2><ul style="line-height:1.7"><li>Noms des épreuves modifiables dans Réglages.</li><li>Nombre d’épreuves illimité : bouton “Ajouter une épreuve”.</li><li>Son court automatique à la fin de chaque épreuve.</li><li>Le son peut nécessiter une interaction utilisateur : bouton “Tester le son de fin”.</li><li>Zoom, thème sombre, plein écran et lien de partage.</li></ul></div></div>
+<div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-label="Informations"><div class="modal-content"><button class="close-btn" onclick="closeModals()" aria-label="Fermer">×</button><h2>Informations</h2><ul style="line-height:1.7"><li>Profils DNB 2026 intégrés : salles ordinaires avec sonneries, salle A4 avec horaires aménagés.</li><li>Épreuves en plusieurs parties : durées standard/TT, calculatrice, copies et ramassage.</li><li>Rappel DNB : copies EN uniquement, en-têtes et pagination à vérifier, une copie rendue même blanche.</li><li>Téléphones et montres connectées éteints et rangés dans les sacs; sacs et documents hors de portée.</li><li>Sortie interdite avant la fin de l'épreuve; toilettes accompagnées, sauf aménagement.</li><li>Zoom, thème sombre, plein écran et lien de partage.</li></ul></div></div>
 <div id="share-toast">✓ URL copiée !</div>
 
 <script>
-const KEY='copieEx_v22_epreuves_dynamiques';
-let timeOffset=0,timeSource='pc',netTimeDiff=null,modeleCopie='en',zoomLevel=100,audioCtx=null;
+const KEY='copieEx_v25_dnb2026_all';
+let timeOffset=0,timeSource='pc',netTimeDiff=null,modeleCopie='en',zoomLevel=100,audioCtx=null,tiersTemps=false,dnbProfile='standard',dnbDay='auto';
 let exams=[];
 const examRuntimeState={};
+const partRuntimeState={};
 const PICTO_KEYS=['tel','watch','exit','bag','noise'];
-const DEFAULT_PICTO_LABELS={tel:'Smartphone',watch:'Montre connectée',exit:'Sortie avant 1h',bag:'Sacs près des tables',noise:'Bavardage'};
+const DEFAULT_PICTO_LABELS={tel:'Téléphone éteint',watch:'Montre connectée',exit:'Sortie interdite',bag:'Sacs hors de portée',noise:'Silence'};
 let pictoLabels={...DEFAULT_PICTO_LABELS};
 const examColors=['#000091','#2e7d32','#5c6bc0','#558b2f','#8e24aa','#006c9c','#c26400','#008941','#b00020','#6d4c41'];
-const syncMap={'f-examen':'f-examen2','f-serie':'f-serie2','f-spe':'f-spe2','f-epreuve':'f-epreuve2','f-repere':'f-repere2'};
+const syncMap={'f-examen':'f-examen2','f-serie':'f-serie2','f-repere':'f-repere2'};
+const DNB_DAY_ORDER=['2026-06-26','2026-06-29','2026-06-30'];
+const DNB_DAY_LABELS={'2026-06-26':'Vendredi 26 juin - Français','2026-06-29':'Lundi 29 juin - HG-EMC / Sciences','2026-06-30':'Mardi 30 juin - Mathématiques'};
+function dnbDateKey(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
+function getDnbEffectiveDay(day=dnbDay,date=new Date()){
+ if(day==='all')return'all';
+ if(DNB_DAY_ORDER.includes(day))return day;
+ const today=dnbDateKey(date);if(DNB_DAY_ORDER.includes(today))return today;
+ return DNB_DAY_ORDER.find(d=>d>=today)||DNB_DAY_ORDER[DNB_DAY_ORDER.length-1];
+}
+function makeDnbPart(id,name,duration,durationTT,calculator,copieNum,collectNote,visible=true){return{id,name,duration,durationTT:durationTT||duration,calculator:!!calculator,copieNum,collectNote:collectNote||'',visible:visible!==false}}
+function makeDnbExam(id,name,start,duration,parts=[],opts={}){return normalizeExam({id,name,start,duration,visible:opts.visible!==false,parts,distributionNote:opts.distributionNote,paginationNote:opts.paginationNote,muted:!!opts.muted,note:opts.note||'',day:opts.day||'',optional:!!opts.optional},0)}
+function getDnbMathParts(profile){
+ if(profile==='a4')return[
+  makeDnbPart('math-a4-auto','Partie 1 - Automatismes','00:27','00:27',false,1,'Ramassée à l\'issue des 27 min'),
+  makeDnbPart('math-a4-raisonnement','Partie 2 - Raisonnement et résolution de problèmes','02:13','02:13',true,2,'Ramassée à la fin')
+ ];
+ return getDefaultMathsParts();
+}
+function buildDnbExams(profile,day){
+ const isA4=profile==='a4';
+ if(day==='2026-06-26'){
+  if(isA4)return[
+   makeDnbExam('a4-fr-1','Français 1ère partie - aménagée','11:00','01:33',[],{note:'Salle A4'}),
+   makeDnbExam('a4-dictee','Dictée - aménagée','12:35','00:27',[],{note:'Salle A4'}),
+   makeDnbExam('a4-pause','Pause salle A4','13:02','00:18',[],{muted:true,note:'Pause'}),
+   makeDnbExam('a4-fr-2','Français 2ème partie - rédaction aménagée','13:20','02:00',[],{note:'Salle A4'})
+  ];
+  return[
+   makeDnbExam('std-fr-1','Français 1ère partie - grammaire, compréhension, dictée','11:00','01:30',[],{note:'Les élèves restent en salle à 12h30'}),
+   makeDnbExam('std-fr-2','Français 2ème partie - rédaction','12:45','01:30')
+  ];
+ }
+ if(day==='2026-06-29'){
+  if(isA4)return[
+   makeDnbExam('a4-hgemc','Histoire-Géographie EMC - aménagée','11:00','02:40',[],{note:'Salle A4'}),
+   makeDnbExam('a4-sciences','Sciences - aménagée','15:30','01:20',[],{note:'Salle A4'})
+  ];
+  return[
+   makeDnbExam('std-hgemc','Histoire-Géographie EMC','11:00','02:00'),
+   makeDnbExam('std-sciences','Sciences - SVT / Physique-Chimie','15:30','01:00')
+  ];
+ }
+ const mathNotes={distributionNote:'Un seul sujet distribué aux candidats, pas de distribution séparée des parties.',paginationNote:'Une copie par partie - chacune a sa propre pagination.'};
+ return[
+  makeDnbExam(isA4?'a4-maths':'std-maths',isA4?'Mathématiques - aménagée':'Mathématiques','11:00',isA4?'02:40':'02:00',getDnbMathParts(profile),mathNotes),
+  makeDnbExam(isA4?'a4-lve-indiv':'std-lve-indiv','Langue vivante étrangère - candidats individuels','16:00','01:30',[],{note:'Épreuve réservée aux candidats individuels - si concerné',optional:true})
+ ];
+}
+function buildDnbAllExams(profile,visibleDay){
+ return DNB_DAY_ORDER.flatMap(day=>buildDnbExams(profile,day).map(exam=>({...exam,day,visible:visibleDay==='all'||(visibleDay===day&&!exam.optional)})));
+}
+function setFieldSilently(id,value){
+ const el=document.getElementById(id);if(!el)return;
+ el.value=value;
+ const target=syncMap[id],targetEl=target&&document.getElementById(target);
+ if(targetEl)targetEl.value=String(value||'').toUpperCase();
+}
+function applyDnbIdentityDefaults(){
+ setFieldSilently('f-academie','La Réunion');
+ setFieldSilently('f-session','Juin 2026');
+ setFieldSilently('f-examen','DIPLÔME NATIONAL DU BREVET');
+ setFieldSilently('ccyc-examen','DIPLÔME NATIONAL DU BREVET');
+ setFieldSilently('ccyc-session','Juin 2026');
+ syncSelectStateFromText('f-academie-select','f-academie');
+ syncSelectStateFromText('f-serie-select','f-serie');
+}
+function setDnbPresetControls(){
+ const profileSel=document.getElementById('dnb-profile-select'),daySel=document.getElementById('dnb-day-select');
+ if(profileSel)profileSel.value=dnbProfile;
+ if(daySel)daySel.value=dnbDay==='all'?'all':(DNB_DAY_ORDER.includes(dnbDay)?dnbDay:'auto');
+}
+function applyDnbPreset(profile=dnbProfile,day=dnbDay,doSave=true){
+ dnbProfile=profile==='a4'?'a4':'standard';
+ dnbDay=day==='all'?'all':(DNB_DAY_ORDER.includes(day)?day:'auto');
+ const effectiveDay=getDnbEffectiveDay(dnbDay);
+ exams=buildDnbAllExams(dnbProfile,effectiveDay);
+ tiersTemps=false;
+ const tt=document.getElementById('opt-tiers-temps');if(tt)tt.checked=false;
+ const showConsignes=document.getElementById('opt-show-consignes');if(showConsignes)showConsignes.checked=true;
+ PICTO_KEYS.forEach(key=>{const cb=document.getElementById('opt-'+key);if(cb)cb.checked=true});
+ pictoLabels={...DEFAULT_PICTO_LABELS};
+ applyDnbIdentityDefaults();
+ setDnbPresetControls();
+ renderPictoLabels();updateAllPictos();renderDnbContext();
+ if(doSave)saveAll();
+}
+function clearNoWriteFields(){['f-spe2','f-epreuve2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
+function setDnbPresetProfile(profile){dnbProfile=profile==='a4'?'a4':'standard';setDnbPresetControls();renderDnbContext();saveAll()}
+function setDnbPresetDay(day){dnbDay=day==='all'?'all':(DNB_DAY_ORDER.includes(day)?day:'auto');setDnbPresetControls();renderDnbContext();saveAll()}
+function applyDnbPresetFromSettings(){applyDnbPreset(dnbProfile,dnbDay,true);renderExams();showToast('Épreuves DNB préconfigurées')}
+function resetDnbPreset(day){dnbDay=day==='all'?'all':(DNB_DAY_ORDER.includes(day)?day:'auto');applyDnbPreset(dnbProfile,dnbDay,true);clearNoWriteFields();renderExams();showToast('Préconfiguration réinitialisée')}
+function renderDnbContext(){
+ const el=document.getElementById('dnb-context');if(!el)return;
+ const effectiveDay=getDnbEffectiveDay(dnbDay),dayLabel=effectiveDay==='all'?'Toutes les épreuves préconfigurées':(DNB_DAY_LABELS[effectiveDay]||'DNB 2026');
+ const isA4=dnbProfile==='a4';
+ const note=isA4?'Salle A4 - aménagements 1/3 temps - sonneries non applicables':effectiveDay==='all'?'Activez les épreuves utiles dans les paramètres':effectiveDay==='2026-06-29'?'Entrées candidats 10h45 et 15h15 - sonneries applicables':effectiveDay==='2026-06-26'?'Entrée candidats 10h45 - 12h30 les élèves restent en salle':'Entrée candidats 10h45 - sonneries applicables';
+ el.innerHTML=`<span class="dnb-context-main">DNB 2026</span><span>${safeText(dayLabel)}</span><span class="${isA4?'dnb-context-alert':''}">${safeText(note)}</span>`;
+}
 window.addEventListener('load',()=>{
  const now=new Date();bindSaveInputs();const loaded=loadAll();
- if(!loaded){exams=[makeExam('Épreuve 1',toHHMM(now),'01:00',true)];const session=document.getElementById('f-session');if(session)session.value=now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});}
- loadFromURL();ensureAtLeastOneExam();loadZoom();renderPictoLabels();updateAllPictos();renderExams();setModeleCopie(modeleCopie,false);update();setInterval(update,1000);checkInternetTime();setInterval(checkInternetTime,600000);
+ if(!loaded)applyDnbPreset(dnbProfile,dnbDay,false);
+ loadFromURL();ensureAtLeastOneExam();loadZoom();renderPictoLabels();updateAllPictos();setDnbPresetControls();renderExams();setModeleCopie(modeleCopie,false);update();setInterval(update,1000);checkInternetTime();setInterval(checkInternetTime,600000);
 });
 document.addEventListener('pointerdown',()=>unlockAudio(),{once:true});
 document.addEventListener('keydown',()=>unlockAudio(),{once:true});
 function toHHMM(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
-function makeExam(name,start,duration,visible=true){return{id:'ex'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,start,duration,visible}}
+function makePartId(){return'pt'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function makePart(name,duration,durationTT,calculator,copieNum,collectNote){return{id:makePartId(),name,duration,durationTT,calculator:!!calculator,copieNum:copieNum||1,collectNote:collectNote||''}}
+function getDefaultMathsParts(){return[makePart('Partie 1 - Automatismes','00:20','00:27',false,1,'Ramassée à l\'issue des 20 min'),makePart('Partie 2 - Raisonnement et résolution de problèmes','01:40','02:13',true,2,'Ramassée à la fin')]}
+function makeExam(name,start,duration,visible=true){return{id:'ex'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,start,duration,visible,parts:[],distributionNote:'Un seul sujet distribué aux candidats, pas de distribution séparée des parties.',paginationNote:'Une copie par partie — chacune a sa propre pagination.'}}
+function normalizeExam(e,i){return{id:e.id||('ex'+i),name:e.name||('Épreuve '+(i+1)),start:normalizeTimeValue(e.start,toHHMM(new Date())),duration:normalizeTimeValue(e.duration,'01:00'),visible:e.visible!==false,muted:!!e.muted,optional:!!e.optional,note:String(e.note||''),day:String(e.day||''),parts:Array.isArray(e.parts)?e.parts.map((p,j)=>({id:p.id||('pt'+j),name:p.name||('Partie '+(j+1)),visible:p.visible!==false,duration:normalizeTimeValue(p.duration,'00:20'),durationTT:normalizeTimeValue(p.durationTT,p.duration||'00:27'),calculator:!!p.calculator,copieNum:parseInt(p.copieNum,10)||(j+1),collectNote:String(p.collectNote||'')})):[] ,distributionNote:e.distributionNote||'Un seul sujet distribué aux candidats, pas de distribution séparée des parties.',paginationNote:e.paginationNote||'Une copie par partie - chacune a sa propre pagination.'}}
+function examHasParts(exam){return Array.isArray(exam.parts)&&exam.parts.length>0}
+function getVisibleParts(exam){return (exam.parts||[]).filter(p=>p.visible!==false)}
+function getPartDuration(part){return tiersTemps&&part.durationTT?part.durationTT:part.duration}
+function formatDurationLabel(hhmm){if(!hhmm||!/^\d{2}:\d{2}$/.test(hhmm))return'—';const[h,m]=hhmm.split(':').map(Number);if(h===0)return m+' min';if(m===0)return h+' h';return h+' h '+String(m).padStart(2,'0')}
+function formatDurationWithTT(part){const std=formatDurationLabel(part.duration),tt=part.durationTT&&part.durationTT!==part.duration?formatDurationLabel(part.durationTT):'';return tt?std+' (TT '+tt+')':std}
+function formatMsShort(ms){const totalMin=Math.max(0,Math.ceil(ms/60000)),h=Math.floor(totalMin/60),m=String(totalMin%60).padStart(2,'0');return h>0?`${h}h${m}`:`${totalMin} min`}
+function copieOrdinal(n){return n===1?'1ère':n===2?'2ème':n+'ème'}
+function partStateKey(examId,partId){return examId+'::'+partId}
 function ensureAtLeastOneExam(){if(!Array.isArray(exams)||exams.length===0)exams=[makeExam('Épreuve 1',toHHMM(new Date()),'01:00',true)]}
 function safeText(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function normalizeTimeValue(value,fallback){return /^\d{2}:\d{2}$/.test(value||'')?value:fallback}
-function calcEnd(start,duration){if(!start||!duration)return'';const[sh,sm]=start.split(':').map(Number),[dh,dm]=duration.split(':').map(Number);if([sh,sm,dh,dm].some(Number.isNaN))return'';const total=sh*60+sm+dh*60+dm;return String(Math.floor(total/60)%24).padStart(2,'0')+':'+String(total%60).padStart(2,'0')}
-function getPictoLabel(key){return String(pictoLabels[key]||DEFAULT_PICTO_LABELS[key]||'').trim()||DEFAULT_PICTO_LABELS[key]||''}
-function setPictoLabel(key,value){if(!PICTO_KEYS.includes(key))return;pictoLabels[key]=String(value||'').trim()||DEFAULT_PICTO_LABELS[key];renderPictoLabels();saveAll()}
-function renderPictoLabels(){PICTO_KEYS.forEach(key=>{const value=getPictoLabel(key);const head=document.getElementById('p-'+key+'-label');if(head&&document.activeElement!==head&&head.textContent!==value)head.textContent=value;const input=document.getElementById('label-'+key);if(input&&document.activeElement!==input&&input.value!==value)input.value=value})}
-function onPictoClick(e){if(e.target.classList&&e.target.classList.contains('picto-label'))return;openSettings()}
-function onPictoLabelKey(e){if(e.key==='Enter'){e.preventDefault();e.target.blur()}else if(e.key==='Escape'){e.preventDefault();e.target.textContent=getPictoLabel(e.target.dataset.key);e.target.blur()}}
-function onPictoLabelBlur(e,key){const value=String(e.target.textContent||'').replace(/\s+/g,' ').trim();setPictoLabel(key,value)}
-function updateAllPictos(){PICTO_KEYS.forEach(key=>{const cb=document.getElementById('opt-'+key),p=document.getElementById('p-'+key);if(cb&&p)p.classList.toggle('active',cb.checked)})}
-function formatTimeInput(input){
- let value=input.value.replace(/[^0-9]/g,'');
- if(value.length===0)return;
- if(value.length<=2){input.value=value}
- else if(value.length===3){input.value=value.slice(0,2)+':'+value.slice(2)}
- else if(value.length===4){
-  const h=value.slice(0,2),m=value.slice(2,4);
-  const hNum=Math.min(23,parseInt(h)||0),mNum=Math.min(59,parseInt(m)||0);
-  input.value=String(hNum).padStart(2,'0')+':'+String(mNum).padStart(2,'0');
-  input.dispatchEvent(new Event('change',{bubbles:true}))
- }
- else if(value.length>4){
-  const h=value.slice(0,2),m=value.slice(2,4);
-  const hNum=Math.min(23,parseInt(h)||0),mNum=Math.min(59,parseInt(m)||0);
-  input.value=String(hNum).padStart(2,'0')+':'+String(mNum).padStart(2,'0');
-  input.dispatchEvent(new Event('change',{bubbles:true}))
- }
-}
-function attachTimeInputHandlers(){
- document.querySelectorAll('.time-input:not([readonly])').forEach(input=>{
-  input.removeEventListener('input',handleTimeInput);
-  input.addEventListener('input',handleTimeInput);
-  input.removeEventListener('blur',handleTimeBlur);
-  input.addEventListener('blur',handleTimeBlur);
-  input.removeEventListener('focus',handleTimeFocus);
-  input.addEventListener('focus',handleTimeFocus)
- })
-}
-function handleTimeInput(e){formatTimeInput(e.target)}
-function handleTimeBlur(e){
- const val=e.target.value.trim();
- if(val&&!val.includes(':')){formatTimeInput(e.target)}
- else if(val&&val.includes(':')){
-  const[h,m]=val.split(':').map(s=>parseInt(s)||0);
-  e.target.value=String(Math.min(23,h)).padStart(2,'0')+':'+String(Math.min(59,m)).padStart(2,'0');
-  e.target.dispatchEvent(new Event('change',{bubbles:true}))
- }
-}
-function handleTimeFocus(e){e.target.select()}
-function renderExams(){
- const container=document.getElementById('exam-blocs'),settings=document.getElementById('exam-settings-list');if(!container||!settings)return;container.innerHTML='';settings.innerHTML='';
- exams.forEach((exam,index)=>{
-  const color=examColors[index%examColors.length];
-  if(exam.visible){
-   const end=calcEnd(exam.start,exam.duration);const row=document.createElement('div');row.className='hb-row';row.id='hbr-'+exam.id;
-   row.innerHTML=`<div class="hb-spacer"></div><div class="horaire-bloc dynamic-exam" id="hb-${exam.id}" style="--exam-color:${color}"><div class="hb-body"><div class="hb-timing-row"><span class="hb-title" id="title-${exam.id}">${safeText(exam.name)}</span><div class="time-field-wrap"><span class="time-label-chip">Début</span><input type="text" class="time-input" id="start-${exam.id}" value="${safeText(exam.start)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','start',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></div><div class="time-field-wrap" style="border-color:var(--accent);background:var(--blue-cumulus);"><span class="time-label-chip">Durée</span><input type="text" class="time-input" id="dur-${exam.id}" value="${safeText(exam.duration)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','duration',this.value)"><svg class="time-icon" viewBox="0 0 24 24"><path d="M12 2 L12 12 L17 12"/><circle cx="12" cy="12" r="9"/></svg></div><div class="time-field-wrap readonly"><span class="time-label-chip">Fin</span><input type="text" class="time-input" id="end-${exam.id}" value="${safeText(end)}" placeholder="00:00" readonly tabindex="-1"></div></div><div class="hb-progress"><div class="hb-bar" id="hb-bar-${exam.id}"></div></div></div><div class="hb-remaining"><div class="hb-rem-label">Temps restant</div><div class="hb-rem-value" id="hb-rem-${exam.id}">—</div></div></div>`;
-   container.appendChild(row);
-  }
-  const item=document.createElement('div');item.className='exam-settings-row';
-  item.innerHTML=`<input type="checkbox" ${exam.visible?'checked':''} title="Afficher cette épreuve" onchange="updateExam('${exam.id}','visible',this.checked)"><input type="text" value="${safeText(exam.name)}" placeholder="Nom de l'épreuve" onchange="updateExam('${exam.id}','name',this.value)" oninput="previewExamName('${exam.id}',this.value)"><input type="text" class="time-input" value="${safeText(exam.start)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','start',this.value)" title="Début"><input type="text" class="time-input" value="${safeText(exam.duration)}" placeholder="00:00" maxlength="5" onchange="updateExam('${exam.id}','duration',this.value)" title="Durée"><button type="button" class="exam-delete-btn" onclick="removeExam('${exam.id}')" title="Supprimer">×</button>`;
-  settings.appendChild(item);
- });
- attachTimeInputHandlers();
- update();
-}
-function updateExam(id,field,value){const exam=exams.find(e=>e.id===id);if(!exam)return;if(field==='visible')exam.visible=Boolean(value);if(field==='name')exam.name=String(value||'').trim()||'Épreuve';if(field==='start')exam.start=normalizeTimeValue(value,toHHMM(new Date()));if(field==='duration')exam.duration=normalizeTimeValue(value,'01:00');if(field==='start'||field==='duration')examRuntimeState[id]={lastPhase:null,notified:false};saveAll();renderExams()}
-function previewExamName(id,value){const title=document.getElementById('title-'+id);if(title)title.textContent=value||'Épreuve'}
-function addExamFromSettings(){const last=exams[exams.length-1];const start=last?calcEnd(last.start,last.duration):toHHMM(new Date());exams.push(makeExam('Épreuve '+(exams.length+1),start,'01:00',true));saveAll();renderExams()}
-function removeExam(id){exams=exams.filter(e=>e.id!==id);delete examRuntimeState[id];ensureAtLeastOneExam();saveAll();renderExams()}
-function getExamTiming(exam,now){const endValue=calcEnd(exam.start,exam.duration);if(!exam.start||!exam.duration||!endValue)return null;const start=new Date(now),end=new Date(now);const[sh,sm]=exam.start.split(':').map(Number),[eh,em]=endValue.split(':').map(Number);start.setHours(sh,sm,0,0);end.setHours(eh,em,0,0);if(end<=start)end.setDate(end.getDate()+1);return{start,end,total:end-start,remaining:end-now,endValue}}
-function update(){
- const now=getNow(),dateEl=document.getElementById('current-date'),timeEl=document.getElementById('current-time');
- if(dateEl)dateEl.innerText=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
- const showSec=document.getElementById('opt-secondes')?.checked!==false;if(timeEl)timeEl.innerText=showSec?now.toLocaleTimeString('fr-FR'):now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
- let firstVisibleResult=null;
- exams.forEach(exam=>{if(!exam.visible)return;const bloc=document.getElementById('hb-'+exam.id),remEl=document.getElementById('hb-rem-'+exam.id),bar=document.getElementById('hb-bar-'+exam.id),endEl=document.getElementById('end-'+exam.id);if(!bloc||!remEl||!bar)return;bloc.classList.remove('hb-warn','hb-danger','hb-done');const timing=getExamTiming(exam,now);if(!timing){remEl.innerText='—';bar.style.width='100%';return}if(endEl)endEl.value=timing.endValue;bar.style.width=Math.max(0,Math.min(100,(timing.remaining/timing.total)*100))+'%';const remMin=Math.floor(timing.remaining/60000);if(!firstVisibleResult)firstVisibleResult={remMin};const state=examRuntimeState[exam.id]||{lastPhase:null,notified:false};if(timing.remaining<=0){remEl.innerText='TERMINÉ';bloc.classList.add('hb-done');if(state.lastPhase==='running'&&!state.notified){state.notified=true;playEndSound();bloc.classList.add('hb-ended-flash');setTimeout(()=>bloc.classList.remove('hb-ended-flash'),4000)}state.lastPhase='done'}else{const h=Math.floor(remMin/60),m=String(remMin%60).padStart(2,'0');remEl.innerText=h>0?`${h}h${m}`:`${remMin} min`;if(remMin<10)bloc.classList.add('hb-danger');else if(remMin<30)bloc.classList.add('hb-warn');state.lastPhase='running';state.notified=false}examRuntimeState[exam.id]=state});
- const app=document.getElementById('app'),bnr=document.getElementById('alert-banner');if(app)app.classList.remove('alert-warning','alert-danger','alert-done');if(bnr)bnr.innerText='';if(firstVisibleResult&&app&&bnr){if(firstVisibleResult.remMin<=0)app.classList.add('alert-done');else if(firstVisibleResult.remMin<10){app.classList.add('alert-danger');bnr.innerText='⚠️ Moins de 10 minutes — Rendez vos copies !'}else if(firstVisibleResult.remMin<30){app.classList.add('alert-warning');bnr.innerText='⚠️ Moins de 30 minutes restantes'}}}
-function unlockAudio(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume()}catch(e){}}
-function getAudioCtx(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
-function playTone(ctx,freq,start,duration,gainValue){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,start);gain.gain.setValueAtTime(gainValue,start);gain.gain.exponentialRampToValueAtTime(0.001,start+duration);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+duration)}
-function playEndSound(){try{const ctx=getAudioCtx();if(ctx.state==='suspended')ctx.resume();const t=ctx.currentTime+0.04;playTone(ctx,880,t,0.16,0.22);playTone(ctx,1175,t+0.22,0.22,0.24)}catch(e){}}
-function testEndSound(){unlockAudio();playEndSound();showToast('🔊 Son de fin testé')}
-function getNow(){return new Date(Date.now()+timeOffset)}
-async function checkInternetTime(){const sources=[{url:'https://timeapi.io/api/time/current/zone?timeZone=UTC',parse:d=>Date.parse(d.dateTime+'Z')},{url:'https://worldtimeapi.org/api/timezone/Etc/UTC',parse:d=>Date.parse(d.utc_datetime)},{url:'https://www.google.com/generate_204',head:true,parse:(d,h)=>Date.parse(h.get('date'))}];for(const src of sources){try{const t0=Date.now();const r=await fetch(src.url,{method:src.head?'HEAD':'GET',cache:'no-store',mode:'cors'});const t1=Date.now();if(!r.ok&&r.status!==204)continue;const serverMs=src.head?src.parse(null,r.headers):src.parse(await r.json());if(!Number.isFinite(serverMs))continue;netTimeDiff=Math.round((serverMs+((t1-t0)/2)-t1)/1000);updateTimeSourceStatus();const alertBtn=document.getElementById('time-alert-btn');if(alertBtn)alertBtn.style.display=Math.abs(netTimeDiff)>=180?'inline-block':'none';if(timeSource==='net')timeOffset=netTimeDiff*1000;return}catch(e){}}netTimeDiff=null;updateTimeSourceStatus()}
-function updateTimeSourceStatus(){
- const el=document.getElementById('time-source-status');
- if(!el)return;
- if(netTimeDiff===null){el.innerHTML="<span style='opacity:.6'>Vérification impossible. L’heure du PC est utilisée.</span>";return}
- const abs=Math.abs(netTimeDiff),sign=netTimeDiff>0?'retard':'avance';
- if(abs<60){el.innerHTML=`<span style="color:var(--green-emerald)">Heure du PC synchronisée (écart : ${abs}s)</span>`}
- else{const min=Math.floor(abs/60),sec=abs%60;el.innerHTML=`<span style="color:var(--warning)">Le PC a <strong>${min}min${sec?sec+'s':''} de ${sign}</strong> par rapport à l’heure internet.</span>`}
-}
-function setTimeSource(src){timeSource=src;if(src==='net'&&netTimeDiff!==null){timeOffset=netTimeDiff*1000;const b=document.getElementById('time-alert-btn');if(b)b.style.display='none'}else timeOffset=0;const rb=document.getElementById('src-'+src);if(rb)rb.checked=true;saveAll()}
-function bindSaveInputs(){document.querySelectorAll('.save-data').forEach(el=>{el.addEventListener('input',()=>{const target=syncMap[el.id];if(target&&document.getElementById(target))document.getElementById(target).value=el.value.toUpperCase();saveAll()})})}
-function saveAll(){const d={theme:document.documentElement.getAttribute('data-theme'),modele:modeleCopie,timeSource,exams,pictoLabels};document.querySelectorAll('.save-data').forEach(el=>d[el.id]=el.value);['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el)d[id]=el.checked});localStorage.setItem(KEY,JSON.stringify(d))}
-function loadAll(){const raw=localStorage.getItem(KEY);if(!raw)return false;try{const d=JSON.parse(raw);if(d.theme)document.documentElement.setAttribute('data-theme',d.theme);if(d.modele)modeleCopie=d.modele;if(d.timeSource)timeSource=d.timeSource;if(d.pictoLabels&&typeof d.pictoLabels==='object')pictoLabels={...DEFAULT_PICTO_LABELS,...d.pictoLabels};if(Array.isArray(d.exams))exams=d.exams.map((e,i)=>({id:e.id||('ex'+i),name:e.name||('Épreuve '+(i+1)),start:normalizeTimeValue(e.start,toHHMM(new Date())),duration:normalizeTimeValue(e.duration,'01:00'),visible:e.visible!==false}));document.querySelectorAll('.save-data').forEach(el=>{if(d[el.id]!==undefined){el.value=d[el.id];el.dispatchEvent(new Event('input'))}});['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el&&d[id]!==undefined)el.checked=d[id]});renderPictoLabels();updateAllPictos();const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;syncSelectStateFromText('f-academie-select','f-academie');syncSelectStateFromText('f-serie-select','f-serie');return true}catch(e){return false}}
-function encodeData(obj){
- try{
-  const json=JSON.stringify(obj);
-  const bytes=new TextEncoder().encode(json);
-  let binary='';
-  bytes.forEach(b=>binary+=String.fromCharCode(b));
-  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
- }catch(e){console.error('Erreur encodage partage',e);return ''}
-}
-function decodeData(str){
- const normalized=String(str||'').replace(/-/g,'+').replace(/_/g,'/');
- const padded=normalized+'='.repeat((4-normalized.length%4)%4);
- const binary=atob(padded);
- const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
- return JSON.parse(new TextDecoder().decode(bytes));
-}
-function collectShareConfig(){
- const fields={};
- document.querySelectorAll('.save-data').forEach(el=>{fields[el.id]=el.value||''});
- const options={};
- ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{const el=document.getElementById(id);if(el)options[id]=el.checked});
- return {v:5,exams,modele:modeleCopie,timeSource,fields,options,pictoLabels,theme:document.documentElement.getAttribute('data-theme')||'light'};
-}
-function applyShareConfig(cfg){
- if(!cfg||typeof cfg!=='object')return;
- if(cfg.theme)document.documentElement.setAttribute('data-theme',cfg.theme);
- if(cfg.modele)modeleCopie=cfg.modele;
- if(cfg.timeSource)timeSource=cfg.timeSource;
- if(cfg.pictoLabels&&typeof cfg.pictoLabels==='object')pictoLabels={...DEFAULT_PICTO_LABELS,...cfg.pictoLabels};
- if(Array.isArray(cfg.exams)){
-  exams=cfg.exams.map((e,i)=>({
-   id:e.id||makeExam('',toHHMM(new Date()),'01:00',true).id,
-   name:e.name||('Épreuve '+(i+1)),
-   start:normalizeTimeValue(e.start,toHHMM(new Date())),
-   duration:normalizeTimeValue(e.duration,'01:00'),
-   visible:e.visible!==false
-  }));
- }
- if(cfg.fields){
-  Object.entries(cfg.fields).forEach(([id,value])=>{
-   const el=document.getElementById(id);
-   if(el){el.value=value||'';el.dispatchEvent(new Event('input'))}
-  });
- }
- if(cfg.options){
-  Object.entries(cfg.options).forEach(([id,value])=>{
-   const el=document.getElementById(id);
-   if(el)el.checked=Boolean(value);
-  });
- }
- renderPictoLabels();updateAllPictos();
- const src=document.getElementById('src-'+timeSource);if(src)src.checked=true;
- syncSelectStateFromText('f-academie-select','f-academie');
- syncSelectStateFromText('f-serie-select','f-serie');
-}
-function buildShareURL(){
- const base=window.location.origin+window.location.pathname;
- const cfg=encodeData(collectShareConfig());
- return base+(cfg?('?cfg='+cfg):'');
-}
-function loadFromURL(){
- const params=new URLSearchParams(window.location.search);
- if(params.has('cfg')){
-  try{applyShareConfig(decodeData(params.get('cfg')));saveAll();return}
-  catch(e){console.error('Erreur chargement cfg',e);showToast('Lien de partage invalide')}
- }
- // Compatibilité avec les anciens liens de test contenant ?exams=...
- if(params.has('exams')){
-  try{
-   const legacy={exams:decodeData(params.get('exams')),modele:params.get('modele')||modeleCopie,fields:{},options:{}};
-   document.querySelectorAll('.save-data').forEach(el=>{if(params.has(el.id))legacy.fields[el.id]=params.get(el.id)});
-   ['opt-tel','opt-watch','opt-exit','opt-bag','opt-noise','opt-secondes'].forEach(id=>{if(params.has(id))legacy.options[id]=params.get(id)==='1'});
-   applyShareConfig(legacy);saveAll();
-  }catch(e){console.error('Erreur chargement ancien lien',e)}
- }
-}
-function shareURL(){const url=buildShareURL();document.getElementById('share-url-input').value=url;const examPreview=exams.map(e=>`<div class="share-field-row"><span class="share-field-key">${safeText(e.name)}</span><span class="share-field-val">${safeText(e.start)} — durée ${safeText(e.duration)} ${e.visible?'':'(masquée)'}</span></div>`).join('');const pictoPreview=PICTO_KEYS.map(k=>{const cb=document.getElementById('opt-'+k);return `<div class="share-field-row"><span class="share-field-key">Interdiction</span><span class="share-field-val">${safeText(getPictoLabel(k))} ${cb&&cb.checked?'':'(masquée)'}</span></div>`}).join('');document.getElementById('share-fields-preview').innerHTML=examPreview+pictoPreview;document.getElementById('shareModal').classList.add('open')}
-function copyShareURL(){const input=document.getElementById('share-url-input');input.select();navigator.clipboard?.writeText(input.value).then(()=>showToast('✓ URL copiée !')).catch(()=>{document.execCommand('copy');showToast('✓ URL copiée !')})}
-function showToast(msg){const t=document.getElementById('share-toast');if(!t)return;t.innerText=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-function setModeleCopie(m,doSave=true){modeleCopie=['aucun','en','ccyc'].includes(m)?m:'en';const isEN=modeleCopie==='en',isCCYC=modeleCopie==='ccyc';const haut=document.querySelector('.copie-haut'),sep=document.getElementById('sep-tirets'),bas=document.querySelector('.copie-bas'),ccyc=document.getElementById('ccyc-bloc');if(haut)haut.style.display=isEN?'':'none';if(sep)sep.style.display=isEN?'':'none';if(bas)bas.style.display=isEN?'':'none';if(ccyc)ccyc.classList.toggle('active',isCCYC);const rb=document.getElementById('modele-'+modeleCopie);if(rb)rb.checked=true;if(doSave)saveAll()}
-function togglePicto(id,show){const el=document.getElementById(id);if(el)el.classList.toggle('active',show);saveAll()}
-function toggleTheme(){const r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'light':'dark');saveAll()}
-function adjustZoom(delta){zoomLevel=Math.min(150,Math.max(60,zoomLevel+delta));document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%';localStorage.setItem('copieEx_zoom',zoomLevel)}
-function loadZoom(){const saved=parseInt(localStorage.getItem('copieEx_zoom'));if(saved&&saved>=60&&saved<=150){zoomLevel=saved;document.documentElement.style.fontSize=(zoomLevel/100)+'rem';document.getElementById('zoom-label').innerText=zoomLevel+'%'}}
-function toggleFullScreen(){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}
-function openSettings(section){document.getElementById('settingsModal').classList.add('open');if(section==='source')setTimeout(()=>document.getElementById('section-source')?.scrollIntoView({behavior:'smooth',block:'center'}),80)}
-function openInfo(){document.getElementById('infoModal').classList.add('open')}
-function closeModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'))}
-window.addEventListener('click',e=>{if(e.target.classList.contains('modal'))closeModals()});window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
-function onAcademieChange(sel){selectOrOther(sel,'f-academie')}function onSerieChange(sel){selectOrOther(sel,'f-serie')}function onAcademieBlur(txt){otherBlur(txt,'f-academie-select')}function onSerieBlur(txt){otherBlur(txt,'f-serie-select')}
-function selectOrOther(sel,textId){const txt=document.getElementById(textId);if(sel.value==='__autre__'){sel.style.display='none';txt.style.display='';txt.value='';txt.focus()}else{txt.style.display='none';sel.style.display='';txt.value=sel.value}txt.dispatchEvent(new Event('input'));saveAll()}
-function otherBlur(txt,selectId){if(txt.value.trim()===''){const sel=document.getElementById(selectId);sel.value='';sel.style.display='';txt.style.display='none';txt.value='';txt.dispatchEvent(new Event('input'));saveAll()}}
-function syncSelectStateFromText(selectId,textId){const sel=document.getElementById(selectId),txt=document.getElementById(textId);if(!sel||!txt)return;const val=txt.value;const opt=[...sel.options].find(o=>(o.value||o.text)===val);if(opt&&opt.value!=='__autre__'){sel.value=opt.value||opt.text;sel.style.display='';txt.style.display='none'}else if(val){sel.value='__autre__';sel.style.display='none';txt.style.display=''}}
-</script>
-</body>
-</html>
