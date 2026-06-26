@@ -181,8 +181,8 @@ const examColors=['#000091','#2e7d32','#5c6bc0','#558b2f','#8e24aa','#006c9c','#
 const syncMap={'f-examen':'f-examen2','f-serie':'f-serie2','f-repere':'f-repere2','f-epreuve':'f-epreuve2'};
 const DNB_DAY_ORDER=['2026-06-26','2026-06-29','2026-06-30'];
 const DNB_DAY_LABELS={'2026-06-26':'Vendredi 26 juin - Français','2026-06-29':'Lundi 29 juin - HG-EMC / Sciences','2026-06-30':'Mardi 30 juin - Mathématiques'};
-const DNB_FRANCAIS_PARTIE1_TITRE="Français 1ère partie (Grammaire et compétences linguistiques compréhension et compétences d'interprétation - Dictée)";
-const DNB_FRANCAIS_PARTIE2_TITRE="Français 2ème partie (Rédaction)";
+const DNB_FRANCAIS_PARTIE1_TITRE="Français 1ère partie";
+const DNB_FRANCAIS_PARTIE2_TITRE="Français 2ème partie";
 function dnbDateKey(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
 function getDnbEffectiveDay(day=dnbDay,date=new Date()){
  if(day==='all')return'all';
@@ -194,8 +194,8 @@ function makeDnbPart(id,name,duration,durationTT,calculator,copieNum,collectNote
 function makeDnbExam(id,name,start,duration,parts=[],opts={}){return normalizeExam({id,name,start,duration,durationTT:opts.durationTT||duration,visible:opts.visible!==false,parts,distributionNote:opts.distributionNote,paginationNote:opts.paginationNote,muted:!!opts.muted,note:opts.note||'',day:opts.day||'',optional:!!opts.optional},0)}
 function getDnbMathParts(profile){
  if(profile==='a4')return[
-  makeDnbPart('math-a4-auto','Mathématiques : Partie 1 - Automatismes','00:27','00:27',false,1,'Ramassée à l\'issue des 27 min'),
-  makeDnbPart('math-a4-raisonnement','Mathématiques : Partie 2  -Raisonnement et résolution de problèmes','02:13','02:13',true,2,'Ramassée à la fin')
+  makeDnbPart('math-a4-auto','Mathématiques : Partie 1 ','00:27','00:27',false,1,'Ramassée à l\'issue des 27 min'),
+  makeDnbPart('math-a4-raisonnement','Mathématiques : Partie 2 ','02:13','02:13',true,2,'Ramassée à la fin')
  ];
  return getDefaultMathsParts();
 }
